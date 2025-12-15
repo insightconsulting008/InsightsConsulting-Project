@@ -122,11 +122,10 @@ const AddDepartmentModal = ({ open, onClose, onSubmit, onUpdate, initialData = n
 
         const normalized = normalize(res.data, { ...payload, departmentId: id });
         setCreatedDepartment(normalized);
-         onUpdate?.();
         setShowSuccessPopup(true);
         
 
-       
+        onUpdate?.(normalized);
       } else {
         setLastMode('add');
         const res = await axios.post(
@@ -137,14 +136,10 @@ const AddDepartmentModal = ({ open, onClose, onSubmit, onUpdate, initialData = n
 
         const normalized = normalize(res.data, payload);
         setCreatedDepartment(normalized);
-          
         setShowSuccessPopup(true);
-     
-      
-        
+        onSubmit?.(createdDepartment);
 
-       
-      
+        onSubmit?.(normalized);
         
       }
     } catch (err) {
@@ -155,19 +150,24 @@ const AddDepartmentModal = ({ open, onClose, onSubmit, onUpdate, initialData = n
   };
 
   /* ===== CLOSE SUCCESS ===== */
-const handleCloseSuccess = async () => {
+const handleCloseSuccess = () => {
   setShowSuccessPopup(false);
   setCreatedDepartment(null);
+  setLastMode('add');
 
+  // 🔥 TRIGGER PARENT REFRESH
   if (lastMode === 'edit') {
-    await onUpdate?.();
+    onUpdate?.(createdDepartment);
+    console.log('updted')
   } else {
-    await onSubmit?.();
+    onSubmit?.(createdDepartment);
+    console.log('added')
+  console.log(lastMode)
+    
   }
 
-  onClose?.(); // close modal LAST
+  onClose?.();
 };
-
 
 
   return (

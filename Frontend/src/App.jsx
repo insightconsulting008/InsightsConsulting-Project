@@ -1,5 +1,5 @@
 import React from 'react'
-import AdminNav from './Components/admin/AdminNav'
+import AdminNav from './Components/admin/Navbar/AdminNav'
 import { BrowserRouter, Routes,Route } from 'react-router-dom'
 import Employe from './Components/admin/employee_repo/Employe'
 

@@ -24,7 +24,7 @@ import { TbUserSquareRounded } from "react-icons/tb";
 import { MdOutlineVerifiedUser } from "react-icons/md";
 import { GoShieldX } from "react-icons/go";
 import { PiGridFourLight } from "react-icons/pi";
-import AddEmployeeModal from '../popup/AddEmploye';
+import AddEmployeeModal from './popup/AddEmploye';
 import AddDepartmentModal from './Adddepartment';
 import { FaChevronRight } from "react-icons/fa6";
 import { RiArrowLeftSLine } from "react-icons/ri";
@@ -149,14 +149,6 @@ const EmployeeManagement = () => {
 
     const [deleteSuccess, setDeleteSuccess] = useState(false);//employee dleete csucess
     const [deptDeleteSuccess, setDeptDeleteSuccess] = useState(false); // department delete sucess
-
-   
-const handleDepartmentRefresh = () => {
-  console.log('🔥 DEPARTMENT REFRESH TRIGGERED');
-  setDeptPage(1);                 // reset to first page
-  setDeptRefreshToken(t => t + 1); // FORCE re-fetch
-};
-
 
   // derived stats & helpers
   const stats = useMemo(() => {
@@ -522,13 +514,12 @@ const confirmDelete = async () => {
 };
 
 
-
   const cancelDeleteDept = () => { setShowDeptDeleteConfirm(false); setDeptToDelete(null); setDeptDeleteError(null); };
 
   // -----------------------------
   // UI handlers
   // -----------------------------
-  // const handleRefreshClick = () => { if (activeTab === 'employees') fetchEmployees(page); else if (activeTab === 'departments') fetchDepartments(deptPage); fetchDashboardStats(); };
+  const handleRefreshClick = () => { if (activeTab === 'employees') fetchEmployees(page); else if (activeTab === 'departments') fetchDepartments(deptPage); fetchDashboardStats(); };
 // const handleDepartmentRefreshAfterSave = async () => {
 //   fetchDashboardStats();
 //   setDeptPage(1);
@@ -658,7 +649,7 @@ const refreshDepartmentsOnce = async () => {
               <option value="employees">Sort: Employees</option>
             </select>
 
-            <button onClick={() => fetchDepartments(deptPage)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">Apply</button>
+            
           </div>
         </div>
 
@@ -966,14 +957,17 @@ const refreshDepartmentsOnce = async () => {
 
       <AddEmployeeModal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditingEmployee(null); }} initialData={editingEmployee} onEmployeeAdded={() => handleRefreshAfterSave()} onEmployeeUpdated={() => handleRefreshAfterSave()} />
 
-<AddDepartmentModal
+ <AddDepartmentModal
   open={open}
-  onClose={() => setOpen(false)}
-  onSubmit={handleDepartmentRefresh}
-  onUpdate={handleDepartmentRefresh}
-  initialData={setDepartments}
-/>
+  onClose={() => {
+    setOpen(false);
+    setSelectedCategory(null);
+  }}
+  initialData={selectedCategory}
 
+  onSubmit={refreshDepartmentsOnce}
+  onUpdate={refreshDepartmentsOnce}
+/>
 
 
 

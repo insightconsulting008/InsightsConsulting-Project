@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 import { HiUserPlus } from "react-icons/hi2";
 import axios from 'axios';
-import AddCategoryCombined from './AddCategory';
-import AddDepartmentModal from './employee_repo/Adddepartment';
+
+import AddDepartmentModal from '../employee_repo/Adddepartment';
 import { useNavigate, useLocation } from "react-router-dom";
 
 const AdminNav = () => {
