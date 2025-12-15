@@ -2,7 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, X, Briefcase, CheckSquare } from 'lucide-react';
 
-export default function AddCategoryCombined({ open, onOpenChange }) {
+export default function AddCategoryCombined({
+  open,
+  onOpenChange,
+  editData = null,      // pass an object to open in edit mode and prefill
+  onCreate = () => {},  // called with formData on create
+  onUpdate = () => {}   // called with formData on update
+}) {
   const isControlled = typeof open === 'boolean' && typeof onOpenChange === 'function';
   const [internalOpen, setInternalOpen] = useState(false);
   const isOpen = isControlled ? open : internalOpen;
@@ -14,30 +20,46 @@ export default function AddCategoryCombined({ open, onOpenChange }) {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [submittedData, setSubmittedData] = useState(null);
 
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     categoryName: '',
     licenseRegistration: '',
     categoryId: '',
     categoryDescription: '',
     subCategory: '',
     subCategoryId: ''
-  });
+  };
 
-  // reset form when closed
+  const [formData, setFormData] = useState(emptyForm);
+
+  // determine mode from editData
+  const isEditMode = Boolean(editData && Object.keys(editData).length);
+
+  // If editData prop changes, prefill the form and open the panel
+  useEffect(() => {
+    if (isEditMode) {
+      setFormData({
+        categoryName: editData.categoryName || '',
+        licenseRegistration: editData.licenseRegistration || '',
+        categoryId: editData.categoryId || '',
+        categoryDescription: editData.categoryDescription || '',
+        subCategory: editData.subCategory || '',
+        subCategoryId: editData.subCategoryId || ''
+      });
+      setIsOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editData]);
+
+  // reset form when closed (only when panel becomes closed)
   useEffect(() => {
     if (!isOpen) {
-      setFormData({
-        categoryName: '',
-        licenseRegistration: '',
-        categoryId: '',
-        categoryDescription: '',
-        subCategory: '',
-        subCategoryId: ''
-      });
+      setFormData(emptyForm);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const handleChange = (e) => setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
+  const handleChange = (e) =>
+    setFormData((s) => ({ ...s, [e.target.name]: e.target.value }));
 
   const validateRequired = () => {
     return (
@@ -53,8 +75,16 @@ export default function AddCategoryCombined({ open, onOpenChange }) {
       alert('Please fill all required fields (marked with *).');
       return;
     }
-    // simulate success; replace with API call if needed
-    setSubmittedData({ ...formData });
+
+    // call appropriate callback
+    if (isEditMode) {
+      onUpdate({ ...formData });
+      setSubmittedData({ ...formData });
+    } else {
+      onCreate({ ...formData });
+      setSubmittedData({ ...formData });
+    }
+
     setIsOpen(false);
     setIsSuccessOpen(true);
   };
@@ -119,9 +149,9 @@ export default function AddCategoryCombined({ open, onOpenChange }) {
           {/* Header */}
           <div className="bg-indigo-600 text-white p-4 flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <Plus className="text-indigo-600" size={24} />
+              {isEditMode ? <Briefcase className="text-indigo-600" size={24} /> : <Plus className="text-indigo-600" size={24} />}
             </div>
-            <h2 className="text-lg font-semibold">Add Category</h2>
+            <h2 className="text-lg font-semibold">{isEditMode ? 'Edit Category' : 'Add Category'}</h2>
             <button
               onClick={() => setIsOpen(false)}
               className="ml-auto text-white hover:bg-indigo-700 p-1 rounded"
@@ -227,7 +257,7 @@ export default function AddCategoryCombined({ open, onOpenChange }) {
                 onClick={handleSubmit}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors"
               >
-                Add Category
+                {isEditMode ? 'Update Category' : 'Add Category'}
               </button>
               <button
                 onClick={() => setIsOpen(false)}
@@ -274,7 +304,9 @@ export default function AddCategoryCombined({ open, onOpenChange }) {
               <h3 className="text-xl font-bold text-gray-800 mb-2">
                 '{submittedData?.categoryName || 'GST License'}'
               </h3>
-              <p className="text-gray-600">Category has been created successfully</p>
+              <p className="text-gray-600">
+                Category has been {isEditMode ? 'updated' : 'created'} successfully
+              </p>
             </div>
 
             <p className="text-sm text-gray-500 text-center mb-4">

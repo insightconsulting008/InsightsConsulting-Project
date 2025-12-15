@@ -4,17 +4,18 @@ import { BrowserRouter, Routes,Route } from 'react-router-dom'
 import Employe from './Components/admin/employee_repo/Employe'
 
 
-const App = () => {
+const App = (refreshDepartmentsTrigger, setRefreshDepartmentsTrigger) => {
   return (
    
     <div>
        <BrowserRouter>
        <Routes>
-<Route path="/" element={<AdminNav  />} />
-<Route path="/employee-repo" element={<Employe />} />
+
+<Route path="/employee-repo" element={<Employe refreshDepartmentsTrigger={refreshDepartmentsTrigger}
+        setRefreshDepartmentsTrigger={setRefreshDepartmentsTrigger} />} />
 
 </Routes>
-      <AdminNav/>
+      <AdminNav setRefreshDepartmentsTrigger={setRefreshDepartmentsTrigger}/>
       </BrowserRouter>
     </div>
   )
