@@ -30,9 +30,14 @@ const AdminNav = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  // departments + pagination
   const [departments, setDepartments] = useState([]);
   const [loadingDepts, setLoadingDepts] = useState(true);
   const [deptError, setDeptError] = useState(null);
+  const [deptPage, setDeptPage] = useState(1);
+  const [deptPageSize, setDeptPageSize] = useState(10);
+  const [deptServerTotalPages, setDeptServerTotalPages] = useState(null);
+  const [deptServerTotalDocs, setDeptServerTotalDocs] = useState(null);
 
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -56,33 +61,78 @@ const AdminNav = () => {
     setActiveRoute(location.pathname || '/service-hub');
   }, [location.pathname]);
 
-  // fetch departments from API
-  const fetchDepartments = async () => {
+  // fetch departments from API (paginated)
+  const fetchDepartments = async (page = deptPage, limit = deptPageSize) => {
     setLoadingDepts(true);
     setDeptError(null);
+
     try {
-      const res = await axios.get('https://insightsconsult-backend.onrender.com/department');
-      if (res.data && res.data.success) {
-        setDepartments(res.data.data || []);
+      const res = await axios.get('https://insightsconsult-backend.onrender.com/department', {
+        params: { page, limit }
+      });
+
+      const payload = res?.data ?? {};
+
+      // Possible shapes:
+      // 1) { success: true, data: [...], pagination: { totalPages, totalDepartments } }
+      // 2) { data: [...], meta: { totalPages, total } }
+      // 3) array itself (res.data is an array)
+      // 4) { departments: [...], pagination: {...} }
+      let list = [];
+      let pagination = null;
+
+      if (Array.isArray(payload)) {
+        list = payload;
+      } else if (Array.isArray(payload.data)) {
+        list = payload.data;
+        pagination = payload.pagination ?? payload.meta ?? payload.paging ?? null;
+      } else if (Array.isArray(payload.departments)) {
+        list = payload.departments;
+        pagination = payload.pagination ?? payload.meta ?? null;
+      } else if (payload.success && Array.isArray(payload.data)) {
+        list = payload.data;
+        pagination = payload.pagination ?? payload.meta ?? null;
       } else {
-        setDepartments([]);
+        // fallback: try to find array anywhere
+        const maybeArray = Object.values(payload).find((v) => Array.isArray(v));
+        if (Array.isArray(maybeArray)) {
+          list = maybeArray;
+        } else {
+          list = [];
+        }
+      }
+
+      // Normalize pagination info
+      const totalPagesFromServer = pagination?.totalPages ?? pagination?.pages ?? null;
+      const totalDocsFromServer = pagination?.totalDepartments ?? pagination?.total ?? payload.total ?? null;
+
+      setDepartments(Array.isArray(list) ? list : []);
+      setDeptServerTotalPages(totalPagesFromServer);
+      setDeptServerTotalDocs(totalDocsFromServer);
+
+      // adjust page if server reports fewer pages
+      if (totalPagesFromServer != null && page > totalPagesFromServer) {
+        setDeptPage(totalPagesFromServer);
       }
     } catch (err) {
       console.error('Error fetching departments', err);
       setDeptError('Failed to load departments');
       setDepartments([]);
+      setDeptServerTotalPages(null);
+      setDeptServerTotalDocs(null);
     } finally {
       setLoadingDepts(false);
     }
   };
 
   useEffect(() => {
-    fetchDepartments();
+    fetchDepartments(1, deptPageSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDeptCreated = (createdDept) => {
     if (!createdDept) {
-      fetchDepartments();
+      fetchDepartments(1, deptPageSize);
       return;
     }
 
@@ -95,6 +145,7 @@ const AdminNav = () => {
       ...maybeWrapped,
     };
 
+    // Prepend to local list for instant UI feedback
     setDepartments(prev => [normalized, ...(prev || [])]);
   };
 
@@ -182,7 +233,7 @@ const AdminNav = () => {
                           <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg text-xs text-center p-4">
                             <div className="text-sm text-red-500 py-6">{deptError}</div>
                             <div className="px-4">
-                              <button onClick={() => fetchDepartments()} className="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-3 rounded-lg transition-colors">
+                              <button onClick={() => fetchDepartments(1, deptPageSize)} className="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-3 rounded-lg transition-colors">
                                 Retry
                               </button>
                             </div>
@@ -214,7 +265,7 @@ const AdminNav = () => {
 
                             <ul className="space-y-3">
                               {departments.map((d) => (
-                                <li key={d.departmentId} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 transition-colors" title={d.departmentCode}>
+                                <li key={d.departmentId || d._id || d.name} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 transition-colors" title={d.departmentCode}>
                                   <div className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.labelColor || '#CBD5E1' }} aria-hidden="true" />
                                   <div>
                                     <div className="text-sm font-medium text-gray-800">{d.name}</div>
@@ -241,6 +292,8 @@ const AdminNav = () => {
                         onSubmit={async (formDataOrCreated) => {
                           try {
                             handleDeptCreated(formDataOrCreated);
+                            // After creating, re-fetch first page so API pagination remains consistent
+                            await fetchDepartments(1, deptPageSize);
                           } catch (error) {
                             console.error('Parent onSubmit error:', error);
                           }

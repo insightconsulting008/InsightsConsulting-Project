@@ -1,7 +1,17 @@
 @import "tailwindcss";
 
-    @layer components {
+@layer components {
   .btn-primary {
-    @apply bg-[#6869AC] text-white px-4 py-4  ;
+    @apply bg-[#6869AC] text-white px-4 py-2;
   }
+  .btn-secondary {
+    @apply border-[#6869AC] bg-[#F0F0F7] border text-[#4C4C4C] px-4 py-2;
+  }
+.primary {
+    @apply bg-[#6869AC] ;
+  }
+  .border{
+    @apply border-2 border-[#E5EFFF]
+  }
+  
 }
