@@ -10,8 +10,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+
 
 const API_BASE_URL = 'https://insightsconsult-backend.onrender.com';
 const PRIMARY = '#6869AC';
