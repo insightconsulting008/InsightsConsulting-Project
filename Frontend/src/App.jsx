@@ -1,9 +1,11 @@
-import React from "react";
-import AdminNav from "./Components/admin/AdminNav";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Employe from "./Components/admin/employee_repo/Employe";
-import Service from "./Components/admin/service/GetService";
-import AddService from "./Components/admin/service/AddService";
+import React from 'react'
+import AdminNav from './Components/admin/Navbar/AdminNav'
+import { BrowserRouter, Routes,Route } from 'react-router-dom'
+import Employe from './Components/admin/employee_repo/Employe'
+import AddService from './Components/admin/service/add-service/AddService';
+import GetServive from './Components/admin/service/GetService';
+import Service from './Components/admin/service/Service';
+
 
 const App = (refreshDepartmentsTrigger, setRefreshDepartmentsTrigger) => {
   return (
@@ -17,6 +19,18 @@ const App = (refreshDepartmentsTrigger, setRefreshDepartmentsTrigger) => {
                 refreshDepartmentsTrigger={refreshDepartmentsTrigger}
                 setRefreshDepartmentsTrigger={setRefreshDepartmentsTrigger}
               />
+            }
+          />
+          <Route
+            path="/add-service"
+            element={
+              <AddService/>
+            }
+          />
+          <Route
+            path="/service-hub"
+            element={
+              <Service/>
             }
           />
         </Routes>

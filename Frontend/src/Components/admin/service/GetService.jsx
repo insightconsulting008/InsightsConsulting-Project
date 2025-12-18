@@ -16,7 +16,7 @@ import 'jspdf-autotable';
 const API_BASE_URL = 'https://insightsconsult-backend.onrender.com';
 const PRIMARY = '#6869AC';
 
-export default function ServiceDatabase() {
+export default function GetServive() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('service');

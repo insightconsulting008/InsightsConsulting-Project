@@ -7,11 +7,18 @@
   .btn-secondary {
     @apply border-[#6869AC] bg-[#F0F0F7] border text-[#4C4C4C] px-4 py-2;
   }
-.primary {
-    @apply bg-[#6869AC] ;
-  }
   .border{
     @apply border-2 border-[#E5EFFF]
   }
   
+}
+
+@theme {
+  --color-primary: #6869AC;
+  --color-secondary: #F0F0F7;
+  --color-textdark: #170F49;
+  --color-textlight: #888888;
+  --color-textbright: #FFFFFF;
+  --color-bright: #FFFFFF;
+  --color-dark: #000000;
 }
