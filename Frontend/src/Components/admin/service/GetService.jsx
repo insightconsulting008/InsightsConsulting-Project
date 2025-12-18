@@ -19,6 +19,7 @@ export default function GetServive() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('service');
+  
 
   // category + subcategory state
   const [categories, setCategories] = useState([]);
