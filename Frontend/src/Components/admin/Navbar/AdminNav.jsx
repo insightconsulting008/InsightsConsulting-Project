@@ -17,7 +17,7 @@ import {
 import { HiUserPlus } from "react-icons/hi2";
 import axios from 'axios';
 
-import AddDepartmentModal from '../employee_repo/Adddepartment';
+import AddDepartmentModal from '../employee_repo/popup/AddDepartment';
 import { useNavigate, useLocation } from "react-router-dom";
 
 const AdminNav = () => {
@@ -27,7 +27,7 @@ const AdminNav = () => {
   // initialize from current location so refresh shows correct active item
   const [activeRoute, setActiveRoute] = useState(location.pathname || '/service-hub');
   const [isDeptOpen, setIsDeptOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   // departments + pagination
@@ -225,6 +225,7 @@ const AdminNav = () => {
                   <div className="bg-white rounded-lg border border-gray-200 p-3 max-w-sm">
                     {isOpen ? (
                       <>
+                      
                         {loadingDepts ? (
                           <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg text-xs text-center p-4">
                             <div className="text-sm text-gray-500 py-6">Loading departments…</div>
@@ -263,9 +264,9 @@ const AdminNav = () => {
                               </button>
                             </div>
 
-                            <ul className="space-y-3">
+                            <ul className="space-y-3 max-h-64 overflow-auto">
                               {departments.map((d) => (
-                                <li key={d.departmentId || d._id || d.name} className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 transition-colors" title={d.departmentCode}>
+                                <li key={d.departmentId || d._id || d.name} className="flex items-center gap-3 p-2  rounded-md hover:bg-gray-50 transition-colors" title={d.departmentCode}>
                                   <div className="w-3.5 h-3.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.labelColor || '#CBD5E1' }} aria-hidden="true" />
                                   <div>
                                     <div className="text-sm font-medium text-gray-800">{d.name}</div>

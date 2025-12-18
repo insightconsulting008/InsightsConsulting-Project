@@ -25,9 +25,8 @@ import { MdOutlineVerifiedUser } from "react-icons/md";
 import { GoShieldX } from "react-icons/go";
 import { PiGridFourLight } from "react-icons/pi";
 import AddEmployeeModal from './popup/AddEmploye';
-import AddDepartmentModal from './Adddepartment';
+import AddDepartmentModal from './popup/AddDepartment';
 import { FaChevronRight } from "react-icons/fa6";
-import { RiArrowLeftSLine } from "react-icons/ri";
 import { FaChevronLeft } from 'react-icons/fa';
 
 const TAB_DEFS = [
@@ -49,13 +48,13 @@ const ActionMenu = ({ emp, onEdit, onDelete }) => {
         <MoreVertical className="w-5 h-5 text-gray-600" />
       </button>
       {open && (
-        <div className="absolute right-5 -top-1 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-100 z-50" role="menu">
+        <div className="absolute right-14 -top-1 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-100 z-50" role="menu">
           <button onClick={() => { setOpen(false); onEdit && onEdit(emp); }} className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors text-sm" role="menuitem">
             <Edit2 className="w-4 h-4 text-gray-500" /><span className="text-gray-700">Edit</span>
           </button>
           <div className="border-t border-gray-100" />
           <button onClick={() => { setOpen(false); onDelete && onDelete(emp); }} className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors text-sm text-red-600" role="menuitem">
-            <Trash2 className="w-4 h-4 text-red-500" /><span>Delete Permanently</span>
+            <Trash2 className="w-4 h-4 text-red-500" /><span>Delete</span>
           </button>
         </div>
       )}
@@ -77,10 +76,10 @@ const DeptActionMenu = ({ dept, onView, onEdit, onDelete }) => {
         <MoreVertical className="w-5 h-5 text-gray-600" />
       </button>
       {open && (
-        <div className="absolute -top-5 -left-40 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-100 z-50">
-          <button onClick={() => { setOpen(false); onView && onView(dept); }} className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors text-sm">
+        <div className="absolute -top-5 -left-24 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-100 z-50">
+          {/* <button onClick={() => { setOpen(false); onView && onView(dept); }} className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors text-sm">
             <ExternalLink className="w-4 h-4 text-gray-500" /><span className="text-gray-700">View</span>
-          </button>
+          </button> */}
           <button onClick={() => { setOpen(false); onEdit && onEdit(dept); }} className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors text-sm">
             <Edit2 className="w-4 h-4 text-gray-500" /><span className="text-gray-700">Edit</span>
           </button>
@@ -139,16 +138,15 @@ const EmployeeManagement = () => {
   const [deptFilter, setDeptFilter] = useState('All');
   const [deptSort, setDeptSort] = useState('name');
 
-
-
-
-  
   // stats
   const [dashboardStats, setDashboardStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
-    const [deleteSuccess, setDeleteSuccess] = useState(false);//employee dleete csucess
-    const [deptDeleteSuccess, setDeptDeleteSuccess] = useState(false); // department delete sucess
+  const [deleteSuccess, setDeleteSuccess] = useState(false);//employee dleete csucess
+  const [deptDeleteSuccess, setDeptDeleteSuccess] = useState(false); // department delete sucess
+
+  // Notifications state
+  const [notifications, setNotifications] = useState([]);
 
   // derived stats & helpers
   const stats = useMemo(() => {
@@ -190,7 +188,6 @@ const EmployeeManagement = () => {
     departments.forEach((d) => {
       if (d.departmentId) m[d.departmentId] = d.name || d.departmentName || '—';
       if (d._id) m[d._id] = d.name || d.label || d.departmentName || '—';
-     
     });
     return m;
   }, [departments]);
@@ -204,8 +201,6 @@ const EmployeeManagement = () => {
     });
     return counts;
   }, [employees]);
-  
-
 
   // -----------------------------
   // fetch functions
@@ -234,59 +229,55 @@ const EmployeeManagement = () => {
     }
   }, [page]);
 
-  
-  
   const fetchDepartments = useCallback(
-  async (pageArg, limit = deptPageSize) => {
-    setLoadingDepartments(true);
-    setDeptError(null);
+    async (pageArg, limit = deptPageSize) => {
+      setLoadingDepartments(true);
+      setDeptError(null);
 
-    try {
-      const res = await axios.get(
-        'https://insightsconsult-backend.onrender.com/department',
-        { params: { page: pageArg, limit } }
-      );
+      try {
+        const res = await axios.get(
+          'https://insightsconsult-backend.onrender.com/department',
+          { params: { page: pageArg, limit } }
+        );
 
-      const payload = res?.data ?? {};
-      const list = Array.isArray(payload.data)
-        ? payload.data
-        : Array.isArray(payload)
-        ? payload
-        : payload.departments || [];
+        const payload = res?.data ?? {};
+        const list = Array.isArray(payload.data)
+          ? payload.data
+          : Array.isArray(payload)
+          ? payload
+          : payload.departments || [];
 
-      const pagination = payload.pagination ?? payload.meta ?? null;
+        const pagination = payload.pagination ?? payload.meta ?? null;
 
-      setDepartments(list);
-      setDeptServerTotalPages(
-        pagination?.totalPages ?? pagination?.pages ?? null
-      );
-      setDeptServerTotalDocs(
-        pagination?.totalDepartments ??
-          pagination?.total ??
-          payload.total ??
-          null
-      );
+        setDepartments(list);
+        setDeptServerTotalPages(
+          pagination?.totalPages ?? pagination?.pages ?? null
+        );
+        setDeptServerTotalDocs(
+          pagination?.totalDepartments ??
+            pagination?.total ??
+            payload.total ??
+            null
+        );
 
-      if (
-        (pagination?.totalPages || pagination?.pages) &&
-        pageArg > (pagination.totalPages ?? pagination.pages)
-      ) {
-        setDeptPage(pagination.totalPages ?? pagination.pages);
+        if (
+          (pagination?.totalPages || pagination?.pages) &&
+          pageArg > (pagination.totalPages ?? pagination.pages)
+        ) {
+          setDeptPage(pagination.totalPages ?? pagination.pages);
+        }
+      } catch (err) {
+        console.error('Failed to fetch departments', err);
+        setDeptError('Failed to load departments');
+        setDepartments([]);
+        setDeptServerTotalPages(null);
+        setDeptServerTotalDocs(null);
+      } finally {
+        setLoadingDepartments(false);
       }
-      
-    } catch (err) {
-      console.error('Failed to fetch departments', err);
-      setDeptError('Failed to load departments');
-      setDepartments([]);
-      setDeptServerTotalPages(null);
-      setDeptServerTotalDocs(null);
-    } finally {
-      setLoadingDepartments(false);
-    }
-  },
-  [deptPageSize] // ✅ ONLY page size
-);
-
+    },
+    [deptPageSize]
+  );
 
   const fetchDashboardStats = useCallback(async () => {
     setLoadingStats(true);
@@ -310,12 +301,11 @@ const EmployeeManagement = () => {
   }, []);
 
   // refetch departments when tab active or page changes
- useEffect(() => {
-  if (activeTab === 'departments') {
-    fetchDepartments(deptPage);
-  }
-}, [deptPage, activeTab, fetchDepartments]);
-
+  useEffect(() => {
+    if (activeTab === 'departments') {
+      fetchDepartments(deptPage);
+    }
+  }, [deptPage, activeTab, fetchDepartments]);
 
   // clamp pages if server reports totals
   useEffect(() => { if (serverTotalPages != null && page > serverTotalPages) setPage(serverTotalPages); }, [serverTotalPages, page]);
@@ -377,6 +367,23 @@ const EmployeeManagement = () => {
   }, [filteredDepartments, deptPage, deptPageSize, deptServerTotalPages]);
 
   // -----------------------------
+  // Notification functions
+  // -----------------------------
+  const addNotification = useCallback((message, type = 'success') => {
+    const id = Date.now() + Math.random();
+    setNotifications(prev => [...prev, { id, message, type }]);
+    
+    // Auto-remove notification after 3 seconds
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(notification => notification.id !== id));
+    }, 3000);
+  }, []);
+
+  const removeNotification = useCallback((id) => {
+    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  }, []);
+
+  // -----------------------------
   // export CSV
   // -----------------------------
   const downloadCSV = (rows, filename = 'employees.csv') => {
@@ -408,6 +415,7 @@ const EmployeeManagement = () => {
         }
       } else exportList = filteredEmployees.slice();
       if (!exportList || exportList.length === 0) exportList = employees.slice();
+      
       const rowsForCsv = exportList.map((emp) => ({
         name: emp.name ?? '',
         employeeId: emp.employeeId ?? emp._id ?? '',
@@ -418,12 +426,23 @@ const EmployeeManagement = () => {
         doj: emp.createdAt ? formatDate(emp.createdAt) : '',
         status: emp.status ?? ''
       }));
+      
       const today = new Date().toISOString().slice(0, 10);
-      downloadCSV(rowsForCsv, `employees-${today}.csv`);
+      const filename = `employees-${today}.csv`;
+      
+      if (rowsForCsv.length === 0) {
+        addNotification('No data available to export', 'error');
+        return;
+      }
+      
+      downloadCSV(rowsForCsv, filename);
+      
+      // Show success notification
+      addNotification(`Exported ${rowsForCsv.length} employees to ${filename}`, 'success');
+      
     } catch (err) {
       console.error('Export failed', err);
-      setError('Export failed. Check console for details.');
-      setTimeout(() => setError(null), 4000);
+      addNotification('Export failed. Please try again.', 'error');
     }
   };
 
@@ -433,35 +452,41 @@ const EmployeeManagement = () => {
   const handleEdit = (emp) => { setEditingEmployee(emp || null); setModalOpen(true); };
   const handleDelete = (emp) => { setEmployeeToDelete(emp); setDeleteError(null); setShowDeleteConfirm(true); };
 
-const confirmDelete = async () => {
-  if (!employeeToDelete) return;
+  const confirmDelete = async () => {
+    if (!employeeToDelete) return;
 
-  setDeleting(true);
-  setDeleteError(null);
+    setDeleting(true);
+    setDeleteError(null);
 
-  const id = employeeToDelete._id ?? employeeToDelete.employeeId;
-  if (!id) {
-    setDeleteError('Invalid employee ID');
-    setDeleting(false);
-    return;
-  }
+    const id = employeeToDelete._id ?? employeeToDelete.employeeId;
+    if (!id) {
+      setDeleteError('Invalid employee ID');
+      setDeleting(false);
+      return;
+    }
 
-  try {
-    await axios.delete(
-      `https://insightsconsult-backend.onrender.com/employee/${id}`
-    );
+    try {
+      await axios.delete(
+        `https://insightsconsult-backend.onrender.com/employee/${id}`
+      );
 
-    await fetchEmployees(page);
-    await fetchDashboardStats();
+      await fetchEmployees(page);
+      await fetchDashboardStats();
 
-    setDeleteSuccess(true); // ✅ NO TIMEOUT
+      setDeleteSuccess(true);
 
-  } catch (err) {
-    setDeleteError('Delete failed. Try again.');
-  } finally {
-    setDeleting(false);
-  }
-};
+    } catch (err) {
+      const apiMessage =
+    err?.response?.data?.message ||
+    err?.response?.data?.error ||
+    'Delete failed. Please try again.';
+
+  setDeleteError(apiMessage);
+
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const cancelDelete = () => { setShowDeleteConfirm(false); setEmployeeToDelete(null); setDeleteError(null); };
 
@@ -476,43 +501,38 @@ const confirmDelete = async () => {
   const handleEditDept = (d) => { setSelectedCategory(d || null); setOpen(true); };
   const handleDeleteDept = (d) => { setDeptToDelete(d); setDeptDeleteError(null); setShowDeptDeleteConfirm(true); };
 
- 
+  const confirmDeleteDept = async () => {
+    if (!deptToDelete) return;
 
+    setDeletingDept(true);
+    setDeptDeleteError(null);
 
+    const id = deptToDelete.departmentId ?? deptToDelete._id;
+    if (!id) {
+      setDeptDeleteError('Invalid department ID');
+      setDeletingDept(false);
+      return;
+    }
 
- const confirmDeleteDept = async () => {
-  if (!deptToDelete) return;
+    try {
+      await axios.delete(
+        `https://insightsconsult-backend.onrender.com/department/${id}`
+      );
 
-  setDeletingDept(true);
-  setDeptDeleteError(null);
+      await fetchDepartments(1);
+      await fetchDashboardStats();
+      console.log("dleted refreshed")
 
-  const id = deptToDelete.departmentId ?? deptToDelete._id;
-  if (!id) {
-    setDeptDeleteError('Invalid department ID');
-    setDeletingDept(false);
-    return;
-  }
+      setDeptDeleteSuccess(true);
 
-  try {
-    await axios.delete(
-      `https://insightsconsult-backend.onrender.com/department/${id}`
-    );
-
-    await fetchDepartments(1);
-    await fetchDashboardStats();
-    console.log("dleted refreshed")
-
-    setDeptDeleteSuccess(true); // ✅ NO TIMEOUT
-
-  } catch (err) {
-    setDeptDeleteError(
-      err?.response?.data?.message ?? 'Delete failed'
-    );
-  } finally {
-    setDeletingDept(false);
-  }
-};
-
+    } catch (err) {
+      setDeptDeleteError(
+        err?.response?.data?.message ?? 'Delete failed'
+      );
+    } finally {
+      setDeletingDept(false);
+    }
+  };
 
   const cancelDeleteDept = () => { setShowDeptDeleteConfirm(false); setDeptToDelete(null); setDeptDeleteError(null); };
 
@@ -520,23 +540,12 @@ const confirmDelete = async () => {
   // UI handlers
   // -----------------------------
   const handleRefreshClick = () => { if (activeTab === 'employees') fetchEmployees(page); else if (activeTab === 'departments') fetchDepartments(deptPage); fetchDashboardStats(); };
-// const handleDepartmentRefreshAfterSave = async () => {
-//   fetchDashboardStats();
-//   setDeptPage(1);
-//   await fetchDepartments(1, deptPageSize);
-// };
-// const refreshDepartments = async () => {
-//   fetchDashboardStats();
-//   setDeptPage(1);
-//   await fetchDepartments(1, deptPageSize);
-// };
-const refreshDepartmentsOnce = async () => {
-  setDeptPage(1);               // reset pagination
-  await fetchDepartments(1);    // fetch fresh data
-  fetchDashboardStats();        // optional stats refresh
-};
 
-
+  const refreshDepartmentsOnce = async () => {
+    setDeptPage(1);
+    await fetchDepartments(1);
+    fetchDashboardStats();
+  };
 
   const handleTabChange = (tabKey) => {
     if (tabKey === 'employees') { setActiveFilter('All'); setSearchQuery(''); setPage(1); setError(null); }
@@ -562,15 +571,6 @@ const refreshDepartmentsOnce = async () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input type="text" placeholder="Search" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base" />
             </div>
-
-            {/* <div className="flex gap-3">
-              <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base">
-                <Filter className="w-4 h-4" /> Filter
-              </button>
-              <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base">
-                <ArrowUpDown className="w-4 h-4" /> Sort
-              </button>
-            </div> */}
           </div>
 
           <div className="bg-white rounded-xl border-2 border-gray-200">
@@ -607,7 +607,6 @@ const refreshDepartmentsOnce = async () => {
                     ))
                   )}
                 </tbody>
-               
               </table>
                <div className="border-t border-gray-200  px-4 md:px-6 py-4 hidden md:flex flex-col sm:flex-row items-center justify-center gap-2">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="w-full sm:w-auto border border-gray-400 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50">Previous</button>
@@ -615,12 +614,11 @@ const refreshDepartmentsOnce = async () => {
                 <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="w-full sm:w-auto border border-gray-400 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50">Next</button>
               </div>
 
-              
-            </div>
-            <div className="border-t border-gray-200 md:hidden px-4 md:px-6 py-4  flex items-center justify-center gap-2">
+              <div className="border-t border-gray-200 md:hidden px-4 md:px-6 py-4  flex items-center justify-center gap-2">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="w-full sm:w-auto border border-gray-400 px-4 py-2 text-sm font-medium text-gray-700 flex justify-center items-center  hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"><FaChevronLeft /></button>
                 <span className="px-4 py-2 text-sm w-full text-gray-700"> {page} of {totalPages}</span>
                 <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="w-full sm:w-auto border border-gray-400 px-4 py-2 text-sm font-medium text-gray-700 flex justify-center items-center hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"><FaChevronRight /></button>
+              </div>
               </div>
           </div>
         </>
@@ -637,19 +635,17 @@ const refreshDepartmentsOnce = async () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <select value={deptFilter} onChange={(e) => { setDeptFilter(e.target.value); setDeptPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            <select value={deptFilter} onChange={(e) => { setDeptFilter(e.target.value); setDeptPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-0 text-sm">
               <option>All</option>
               <option>With Employees</option>
               <option>No Employees</option>
             </select>
 
-            <select value={deptSort} onChange={(e) => setDeptSort(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            <select value={deptSort} onChange={(e) => setDeptSort(e.target.value)} className="px-3 py-2 border border-gray-300 focus:outline-0 rounded-lg text-sm">
               <option value="name">Sort: Name</option>
               <option value="created">Sort: Newest</option>
               <option value="employees">Sort: Employees</option>
             </select>
-
-            
           </div>
         </div>
 
@@ -717,6 +713,53 @@ const refreshDepartmentsOnce = async () => {
 
   return (
     <div className="min-h-screen bg-[#fdfdfd] pl-20">
+      {/* Notifications Container */}
+      <div className="fixed top-4 right-4 z-[100] space-y-2">
+        {notifications.map((notification) => (
+          <div key={notification.id} className="animate-slide-in">
+            <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              notification.type === 'success' 
+                ? 'bg-green-50 border border-green-200 text-green-800' 
+                : 'bg-red-50 border border-red-200 text-red-800'
+            }`}>
+              {notification.type === 'success' ? (
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              )}
+              <span className="text-sm font-medium">{notification.message}</span>
+              <button 
+                onClick={() => removeNotification(notification.id)} 
+                className="ml-4 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Add CSS animation styles */}
+      <style>{`
+        @keyframes slide-in {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        .animate-slide-in {
+          animation: slide-in 0.3s ease-out;
+        }
+      `}</style>
+
       <div className='bg-white py-6'>
         <div className="flex flex-col md:flex-row items-start md:items-center max-w-7xl mx-auto justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -724,13 +767,42 @@ const refreshDepartmentsOnce = async () => {
             <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Employee Management</h1>
           </div>
 
+          {/* UPDATED BUTTON SECTION */}
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => { setEditingEmployee(null); setModalOpen(true); }} className="flex items-center gap-2 btn-primary py-3 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap">
-              <Plus className="w-4 h-4" /><span className="hidden sm:inline">Add New Employee</span><span className="sm:hidden">Add</span>
-            </button>
+            {/* Conditionally render button based on active tab */}
+            {activeTab === 'employees' ? (
+              <button
+                onClick={() => {
+                  setEditingEmployee(null);
+                  setModalOpen(true);
+                }}
+                className="flex items-center gap-2 btn-primary py-3 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add New Employee</span>
+                <span className="sm:hidden">Add</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setOpen(true);
+                }}
+                className="flex items-center gap-2 btn-primary py-3 rounded-lg transition-colors text-sm md:text-base whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add New Department</span>
+                <span className="sm:hidden">Add</span>
+              </button>
+            )}
 
-            <button onClick={handleExport} className="flex items-center gap-2 px-3 md:px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base whitespace-nowrap">
-              <Download className="w-4 h-4" /><span className="hidden sm:inline">Bulk Export</span><span className="sm:hidden">Export</span>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-3 md:px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base whitespace-nowrap"
+            >
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Bulk Export</span>
+              <span className="sm:hidden">Export</span>
             </button>
           </div>
         </div>
@@ -765,215 +837,194 @@ const refreshDepartmentsOnce = async () => {
 
       {/* Employee Delete Modal */}
       {showDeleteConfirm && employeeToDelete && (
-  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-    <div className="bg-white rounded-xl shadow-lg w-full max-w-md relative">
-      <div className="flex items-center btn-primary rounded-t-xl  gap-3">
-                  <div className="w-12 h-12  b rounded-full flex items-center justify-center overflow-hidden">
-                    {employeeToDelete?.photoUrl ? (
-                      <img src={employeeToDelete.photoUrl} alt={employeeToDelete.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Users className=" bg-white rounded-full p-1 text-indigo-600" />
-                    )}
-                  </div>
-                  <div className="flex-1 ">
-                    <h3 className="font-semibold text-lg">{employeeToDelete?.name}</h3>
-                    <p className="text-sm ">{employeeToDelete?.role} | {employeeToDelete?.designation}</p>
-                  </div>
-                  
-                </div>
-
-      {/* CLOSE ICON */}
-      <button
-        onClick={() => {
-          setShowDeleteConfirm(false);
-          setEmployeeToDelete(null);
-          setDeleteSuccess(false);
-        }}
-        className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
-      >
-        <X className="w-5 h-5 text-white" />
-      </button>
-
-      <div className="px-6 py-4 ">
-        <h3 className="text-lg font-semibold text-gray-900 text-center">
-          {deleteSuccess ? 'Deleted Successfully' : 'Confirm Delete'}
-        </h3>
-      </div>
-
-      <div className="px-6 pb-6">
-        {deleteSuccess ? (
-          <div className="flex flex-col items-center text-center gap-3">
-            <img
-              src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/delete%201.png"
-              className="h-16"
-              alt=""
-            />
-
-            <p className="text-sm text-gray-700">
-              <strong>{employeeToDelete.name}</strong> has been deleted successfully.
-            </p>
-
-            <p className="text-xs text-gray-500">
-              This action cannot be undone.
-            </p>
-          </div>
-        ) : (
-          <>
-
-           <div className='flex justify-center items-center mb-4'>
-            <img
-              src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/delete%201.png"
-              className="h-16"
-              alt=""
-            />
-
-           </div>
-           <p className='text-lg text-center mb-2'>{employeeToDelete.name} | {employeeToDelete.designation} </p>
-            <p className="text-sm text-center text-gray-700 mb-4">
-              Are you sure you want to permanently delete this employee {employeeToDelete.name}?
-            </p>
-
-            {/* <div className="text-sm text-gray-800 mb-3">
-              <div><strong>Name:</strong> {employeeToDelete.name}</div>
-              <div><strong>ID:</strong> {employeeToDelete._id}</div>
-            </div> */}
-
-            {deleteError && (
-              <div className="text-sm text-center text-red-600 mb-3">
-                {deleteError}
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md relative">
+            <div className="flex items-center btn-primary rounded-t-xl  gap-3">
+              <div className="w-12 h-12  b rounded-full flex items-center justify-center overflow-hidden">
+                {employeeToDelete?.photoUrl ? (
+                  <img src={employeeToDelete.photoUrl} alt={employeeToDelete.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Users className=" bg-white rounded-full p-1 text-indigo-600" />
+                )}
               </div>
-            )}
-
-            <div className="flex w-[60%] mx-auto gap-3">
-              <button
-                onClick={confirmDelete}
-                disabled={deleting}
-                className="flex-1 btn-primary text-white px-4 py-2 rounded-lg"
-              >
-                {deleting ? 'Deleting...' : 'Confirm '}
-              </button>
-
-              <button
-                onClick={cancelDelete}
-                disabled={deleting}
-                className="flex-1 border px-4 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
+              <div className="flex-1 ">
+                <h3 className="font-semibold text-lg">{employeeToDelete?.name}</h3>
+                <p className="text-sm ">{employeeToDelete?.role} | {employeeToDelete?.designation}</p>
+              </div>
             </div>
-          </>
-        )}
-      </div>
-    </div>
-  </div>
-)}
 
+            {/* CLOSE ICON */}
+            <button
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                setEmployeeToDelete(null);
+                setDeleteSuccess(false);
+              }}
+              className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+
+            <div className="px-6 py-4 ">
+              <h3 className="text-lg font-semibold text-gray-900 text-center">
+                {deleteSuccess ? 'Deleted Successfully' : 'Confirm Delete'}
+              </h3>
+            </div>
+
+            <div className="px-6 pb-6">
+              {deleteSuccess ? (
+                <div className="flex flex-col items-center text-center gap-3">
+                  <img
+                    src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/delete%201.png"
+                    className="h-16"
+                    alt=""
+                  />
+
+                  <p className="text-sm text-gray-700">
+                    <strong>{employeeToDelete.name}</strong> has been deleted successfully.
+                  </p>
+
+                  <p className="text-xs text-gray-500">
+                    This action cannot be undone.
+                  </p>
+                </div>
+              ) : (
+                <>
+                 <div className='flex justify-center items-center mb-4'>
+                  <img
+                    src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/delete%201.png"
+                    className="h-16"
+                    alt=""
+                  />
+                 </div>
+                 <p className='text-lg text-center mb-2'>{employeeToDelete.name} | {employeeToDelete.designation} </p>
+                  <p className="text-sm text-center text-gray-700 mb-4">
+                    Are you sure you want to permanently delete this employee {employeeToDelete.name}?
+                  </p>
+
+                  {deleteError && (
+                    <div className="text-sm text-center text-red-600 mb-3">
+                      {deleteError}
+                    </div>
+                  )}
+
+                  <div className="flex w-[60%] mx-auto gap-3">
+                    <button
+                      onClick={confirmDelete}
+                      disabled={deleting}
+                      className="flex-1 btn-primary text-white px-4 py-2 rounded-lg"
+                    >
+                      {deleting ? 'Deleting...' : 'Confirm '}
+                    </button>
+
+                    <button
+                      onClick={cancelDelete}
+                      disabled={deleting}
+                      className="flex-1 border px-4 py-2 rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Department Delete Modal */}
-    {showDeptDeleteConfirm && deptToDelete && (
-  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-    <div className="bg-white rounded-xl shadow-lg w-full max-w-md relative">
+      {showDeptDeleteConfirm && deptToDelete && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md relative">
 
-      {/* CLOSE ICON */}
-      <button
-        onClick={() => {
-          setShowDeptDeleteConfirm(false);
-          setDeptToDelete(null);
-          setDeptDeleteSuccess(false);
-        }}
-        className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
-      >
-        <X className="w-5 h-5" />
-      </button>
+            {/* CLOSE ICON */}
+            <button
+              onClick={() => {
+                setShowDeptDeleteConfirm(false);
+                setDeptToDelete(null);
+                setDeptDeleteSuccess(false);
+              }}
+              className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-      {/* <div className="px-6 py-4 ">
-        <h3 className="text-lg font-semibold text-gray-900 text-center">
-          {deptDeleteSuccess ? 'Deleted Successfully' : 'Confirm Delete'}
-        </h3>
-      </div> */}
+            <div className="p-6">
+              {deptDeleteSuccess ? (
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <img
+                    src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/delete%201.png"
+                    className="h-16"
+                    alt=""
+                  />
+                  <p className="text-lg text-gray-700">
+                    Department deleted successfully.
+                  </p>
+                </div>
+              ) : (
+                <>
+                 <div className='flex items-center justify-center mb-4'>
+                  <img
+                    src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/delete%201.png"
+                    className="h-16"
+                    alt=""
+                  />
+                 </div>
+                  <div>
+                    <p className='text-lg  text-center mb-2'>{deptToDelete.name} | {deptToDelete.departmentCode }</p>
+                  </div>
+                  <p className="text-sm text-center text-gray-700 mb-4">
+                    Are you sure you want to permanently delete this department <strong>{deptToDelete.name}</strong>?
+                  </p>
 
-      <div className="p-6">
-        {deptDeleteSuccess ? (
-          <div className="flex flex-col items-center gap-3 text-center">
-            <img
-              src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/delete%201.png"
-              className="h-16"
-              alt=""
-            />
-            <p className="text-lg text-gray-700">
-              Department deleted successfully.
-            </p>
+                  {deptDeleteError && (
+                    <div className="text-sm text-center text-red-600 mb-3">
+                      {deptDeleteError}
+                    </div>
+                  )}
+
+                  <div className="flex w-[60%] mx-auto gap-3">
+                    <button
+                      onClick={confirmDeleteDept}
+                      disabled={deletingDept}
+                      className="flex-1 btn-primary text-white px-4 py-2 rounded-lg"
+                    >
+                      {deletingDept ? 'Deleting...' : 'Confirm'}
+                    </button>
+
+                    <button
+                      onClick={cancelDeleteDept}
+                      disabled={deletingDept}
+                      className="flex-1 border px-4 py-2 rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        ) : (
-          <>
-           <div className='flex items-center justify-center mb-4'>
-            <img
-              src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/delete%201.png"
-              className="h-16"
-              alt=""
-            />
-           
-           </div>
-            <div>
-              <p className='text-lg  text-center mb-2'>{deptToDelete.name} | {deptToDelete.departmentCode }</p>
-            </div>
-            <p className="text-sm text-center text-gray-700 mb-4">
-              Are you sure you want to permanently delete this department <strong>{deptToDelete.name}</strong>?
-            </p>
+        </div>
+      )}
 
-            
+      <AddEmployeeModal 
+        isOpen={modalOpen} 
+        onClose={() => { setModalOpen(false); setEditingEmployee(null); }} 
+        initialData={editingEmployee} 
+        onEmployeeAdded={() => handleRefreshAfterSave()} 
+        onEmployeeUpdated={() => handleRefreshAfterSave()} 
+      />
 
-            {deptDeleteError && (
-              <div className="text-sm text-red-600 mb-3">
-                {deptDeleteError}
-              </div>
-            )}
-
-            <div className="flex w-[60%] mx-auto gap-3">
-              <button
-                onClick={confirmDeleteDept}
-                disabled={deletingDept}
-                className="flex-1 btn-primary text-white px-4 py-2 rounded-lg"
-              >
-                {deletingDept ? 'Deleting...' : 'Confirm'}
-              </button>
-
-              <button
-                onClick={cancelDeleteDept}
-                disabled={deletingDept}
-                className="flex-1 border px-4 py-2 rounded-lg"
-              >
-                Cancel
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  </div>
-)}
-
-
-
-      <AddEmployeeModal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditingEmployee(null); }} initialData={editingEmployee} onEmployeeAdded={() => handleRefreshAfterSave()} onEmployeeUpdated={() => handleRefreshAfterSave()} />
-
- <AddDepartmentModal
-  open={open}
-  onClose={() => {
-    setOpen(false);
-    setSelectedCategory(null);
-  }}
-  initialData={selectedCategory}
-
-  onSubmit={refreshDepartmentsOnce}
-  onUpdate={refreshDepartmentsOnce}
-/>
-
-
-
-
-
-
+      <AddDepartmentModal
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          setSelectedCategory(null);
+        }}
+        initialData={selectedCategory}
+        onSubmit={refreshDepartmentsOnce}
+        onUpdate={refreshDepartmentsOnce}
+      />
     </div>
   );
 };

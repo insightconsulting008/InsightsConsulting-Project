@@ -36,7 +36,7 @@ const ErrorPopup = ({ isOpen, onClose, errorMessage }) => {
 
         <button
           onClick={onClose}
-          className="absolute top-36 md:right-[50%] right-[45%] text-white/80 hover:text-white bg-white/30 p-3 rounded-full hover:bg-white/10 transition-colors"
+          className="absolute -top-20 md:right-[50%]  text-white/80 hover:text-white bg-white/30 p-3 rounded-full hover:bg-white/10 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
