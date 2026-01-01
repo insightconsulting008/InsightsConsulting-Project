@@ -32,7 +32,7 @@ const NavbarController = ({ setRefreshDepartmentsTrigger }) => {
   }
 
   if (role === "STAFF") {
-    return <StaffNav/>;
+    return <StaffNav />;
   }
 
   if (role === "USER") {
