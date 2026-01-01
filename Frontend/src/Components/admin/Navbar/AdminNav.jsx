@@ -25,7 +25,7 @@ const AdminNav = () => {
   const location = useLocation();
 
   // initialize from current location so refresh shows correct active item
-  const [activeRoute, setActiveRoute] = useState(location.pathname || '/service-hub');
+  const [activeRoute, setActiveRoute] = useState(location.pathname || '/admin/dashboard');
   const [isDeptOpen, setIsDeptOpen] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -154,7 +154,7 @@ const AdminNav = () => {
       <div
         className={`fixed inset-y-0 left-0 z-40 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${isOpen ? 'w-64' : 'w-20'} overflow-hidden`}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col justify-between">
           <div className="h-16 flex items-center justify-between border-b border-gray-200 px-4">
             <div className={`flex items-center gap-3 ${!isOpen ? 'justify-center w-full' : 'justify-start'}`}>
               <button
@@ -188,8 +188,10 @@ const AdminNav = () => {
               );
             })}
 
-            <div className="p-3">
-              <div className="max-w-4xl mx-auto">
+           
+          </nav>
+           {/* <div className="p-3 flex justify-end">
+              <div className="max-w-4xl   mx-auto">
                 {activeRoute === '/service-hub' && (
                   <div className="bg-white rounded-lg border border-gray-200 p-3 max-w-sm mb-6">
                     {isOpen ? (
@@ -310,11 +312,31 @@ const AdminNav = () => {
                     <p className="text-gray-600">Welcome to your dashboard!</p>
                   </div>
                 )}
+
+                
               </div>
-            </div>
-          </nav>
+            </div> */}
+           
         </div>
+         {isOpen && (
+                            <div className="border-t border-gray-200 flex items-end p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                                  <UserCircle size={20} className="text-indigo-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    Admin
+                                  </p>
+                                  <p className="text-xs text-gray-500 truncate">
+                                    Admin@company.com
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
       </div>
+      
     </div>
   );
 };

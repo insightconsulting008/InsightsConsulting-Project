@@ -28,6 +28,7 @@ import AddEmployeeModal from './popup/AddEmploye';
 import AddDepartmentModal from './popup/AddDepartment';
 import { FaChevronRight } from "react-icons/fa6";
 import { FaChevronLeft } from 'react-icons/fa';
+import axiosInstance from '@src/providers/axiosInstance';
 
 const TAB_DEFS = [
   { key: 'employees', label: 'Employee List' },
@@ -77,9 +78,6 @@ const DeptActionMenu = ({ dept, onView, onEdit, onDelete }) => {
       </button>
       {open && (
         <div className="absolute -top-5 -left-24 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-100 z-50">
-          {/* <button onClick={() => { setOpen(false); onView && onView(dept); }} className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors text-sm">
-            <ExternalLink className="w-4 h-4 text-gray-500" /><span className="text-gray-700">View</span>
-          </button> */}
           <button onClick={() => { setOpen(false); onEdit && onEdit(dept); }} className="w-full text-left px-3 py-2 flex items-center gap-3 hover:bg-gray-50 transition-colors text-sm">
             <Edit2 className="w-4 h-4 text-gray-500" /><span className="text-gray-700">Edit</span>
           </button>
@@ -97,7 +95,7 @@ const EmployeeManagement = () => {
   // UI + modals
   const [open, setOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [activeTab, setActiveTab] = useState('departments');
+  const [activeTab, setActiveTab] = useState('employees');
 
   // employees
   const [employees, setEmployees] = useState([]);
@@ -137,6 +135,10 @@ const EmployeeManagement = () => {
   const [deptSearchQuery, setDeptSearchQuery] = useState('');
   const [deptFilter, setDeptFilter] = useState('All');
   const [deptSort, setDeptSort] = useState('name');
+  
+  // employee filters and sort
+  const [employeeFilter, setEmployeeFilter] = useState('All');
+  const [employeeSort, setEmployeeSort] = useState('name');
 
   // stats
   const [dashboardStats, setDashboardStats] = useState(null);
@@ -205,84 +207,104 @@ const EmployeeManagement = () => {
   // -----------------------------
   // fetch functions
   // -----------------------------
-  const fetchEmployees = useCallback(async (pageArg = page) => {
+ const fetchEmployees = useCallback(
+  async (pageArg = page, limit = pageSize) => {
+    const safePage = Math.max(1, pageArg || 1); // ✅ clamp page
+
     setLoadingEmployees(true);
     setError(null);
+
     try {
-      const res = await axios.get('https://insightsconsult-backend.onrender.com/employee', { params: { page: pageArg, limit: pageSize } });
+      const res = await axiosInstance.get('/employee', {
+        params: { page: safePage, limit },
+      });
+
       const payload = res?.data ?? {};
-      
       const list = Array.isArray(payload.data) ? payload.data : [];
       const pagination = payload.pagination ?? null;
-      setEmployees(Array.isArray(list) ? list : []);
-      setServerTotalPages(pagination?.totalPages ?? null);
-      setServerTotalDocs(pagination?.totalEmployees ?? null);
-      if (pagination?.totalPages && pageArg > pagination.totalPages) setPage(pagination.totalPages);
+
+      setEmployees(list);
+
+      setServerTotalPages(
+        pagination?.totalPages ??
+          Math.max(1, Math.ceil((pagination?.totalEmployees ?? list.length) / limit))
+      );
+
+      setServerTotalDocs(
+        pagination?.totalEmployees ??
+          pagination?.total ??
+          list.length
+      );
+
+      // ❌ DO NOT setPage here (prevents loop)
+
     } catch (err) {
       console.error('Failed to fetch employees', err);
       setError('Failed to load employees');
       setEmployees([]);
-      setServerTotalPages(null);
-      setServerTotalDocs(null);
+      setServerTotalPages(1);
+      setServerTotalDocs(0);
     } finally {
       setLoadingEmployees(false);
     }
-  }, [page]);
+  },
+  [page, pageSize]
+);
 
-  const fetchDepartments = useCallback(
-    async (pageArg, limit = deptPageSize) => {
-      setLoadingDepartments(true);
-      setDeptError(null);
 
-      try {
-        const res = await axios.get(
-          'https://insightsconsult-backend.onrender.com/department',
-          { params: { page: pageArg, limit } }
-        );
+ const fetchDepartments = useCallback(
+  async (pageArg = deptPage, limit = deptPageSize) => {
+    const safePage = Math.max(1, pageArg || 1); // ✅ clamp only
 
-        const payload = res?.data ?? {};
-        const list = Array.isArray(payload.data)
-          ? payload.data
-          : Array.isArray(payload)
-          ? payload
-          : payload.departments || [];
+    setLoadingDepartments(true);
+    setDeptError(null);
 
-        const pagination = payload.pagination ?? payload.meta ?? null;
+    try {
+      const res = await axiosInstance.get('/department', {
+        params: { page: safePage, limit },
+      });
 
-        setDepartments(list);
-        setDeptServerTotalPages(
-          pagination?.totalPages ?? pagination?.pages ?? null
-        );
-        setDeptServerTotalDocs(
-          pagination?.totalDepartments ??
-            pagination?.total ??
-            payload.total ??
-            null
-        );
+      const payload = res?.data ?? {};
+      const list = Array.isArray(payload.data)
+        ? payload.data
+        : payload.departments || [];
 
-        if (
-          (pagination?.totalPages || pagination?.pages) &&
-          pageArg > (pagination.totalPages ?? pagination.pages)
-        ) {
-          setDeptPage(pagination.totalPages ?? pagination.pages);
-        }
-      } catch (err) {
-        console.error('Failed to fetch departments', err);
-        setDeptError('Failed to load departments');
-        setDepartments([]);
-        setDeptServerTotalPages(null);
-        setDeptServerTotalDocs(null);
-      } finally {
-        setLoadingDepartments(false);
-      }
-    },
-    [deptPageSize]
-  );
+      const pagination = payload.pagination ?? payload.meta ?? null;
+
+      setDepartments(list);
+
+      setDeptServerTotalPages(
+        pagination?.totalPages ??
+          Math.max(1, Math.ceil((pagination?.total ?? list.length) / limit))
+      );
+
+      setDeptServerTotalDocs(
+        pagination?.totalDepartments ??
+          pagination?.total ??
+          payload.total ??
+          list.length
+      );
+
+      // ❌ REMOVED setDeptPage (THIS CAUSED LOOP)
+
+    } catch (err) {
+      console.error('Failed to fetch departments', err);
+      setDeptError('Failed to load departments');
+      setDepartments([]);
+      setDeptServerTotalPages(1);
+      setDeptServerTotalDocs(0);
+    } finally {
+      setLoadingDepartments(false);
+    }
+  },
+  [deptPage, deptPageSize]
+);
+
 
   const fetchDashboardStats = useCallback(async () => {
     setLoadingStats(true);
     try {
-      const res = await axios.get('https://insightsconsult-backend.onrender.com/dashboard/stats');
+      const res = await axiosInstance.get('/dashboard/stats');
       setDashboardStats(res?.data?.data ?? res?.data ?? null);
     } catch (err) {
       console.warn('Failed to fetch dashboard stats', err);
@@ -293,33 +315,57 @@ const EmployeeManagement = () => {
   }, []);
 
   // initial load
-  useEffect(() => {
-    fetchEmployees(1);
-    fetchDepartments(1);
-    fetchDashboardStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+ useEffect(() => {
+  fetchEmployees(1);
+  fetchDepartments(1);
+  fetchDashboardStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
+
 
   // refetch departments when tab active or page changes
-  useEffect(() => {
-    if (activeTab === 'departments') {
-      fetchDepartments(deptPage);
-    }
-  }, [deptPage, activeTab, fetchDepartments]);
+useEffect(() => {
+  if (activeTab === 'departments') {
+    fetchDepartments(deptPage);
+  }
+}, [activeTab, deptPage, fetchDepartments]); // ✅ NO departments.length
+
 
   // clamp pages if server reports totals
-  useEffect(() => { if (serverTotalPages != null && page > serverTotalPages) setPage(serverTotalPages); }, [serverTotalPages, page]);
-  useEffect(() => { if (deptServerTotalPages != null && deptPage > deptServerTotalPages) setDeptPage(deptServerTotalPages); }, [deptServerTotalPages, deptPage]);
+  useEffect(() => {
+  if (serverTotalPages && page > serverTotalPages) {
+    setPage(serverTotalPages);
+  }
+  if (page < 1) {
+    setPage(1);
+  }
+}, [serverTotalPages, page]);
 
-  // -----------------------------
-  // filtering + paging
-  // -----------------------------
+  useEffect(() => {
+  if (deptServerTotalPages && deptPage > deptServerTotalPages) {
+    setDeptPage(deptServerTotalPages);
+  }
+}, [deptServerTotalPages, deptPage]);
+
+
   const filteredEmployees = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     let list = employees.slice();
+    
+    // Apply department filter
     if (activeFilter && activeFilter !== 'All') {
       list = list.filter((emp) => (deptMap[emp.departmentId] || '').toLowerCase() === activeFilter.toLowerCase());
     }
+    
+    // Apply status filter
+    if (employeeFilter === 'Active') {
+      list = list.filter((emp) => emp.status === 'ACTIVE');
+    } else if (employeeFilter === 'Inactive') {
+      list = list.filter((emp) => emp.status !== 'ACTIVE');
+    }
+    
+    // Apply search query
     if (q) {
       list = list.filter((emp) => {
         const team = deptMap[emp.departmentId] || '';
@@ -327,11 +373,28 @@ const EmployeeManagement = () => {
           (emp.employeeId || '').toLowerCase().includes(q) ||
           (emp.email || '').toLowerCase().includes(q) ||
           (emp.mobileNumber || '').toLowerCase().includes(q) ||
-          team.toLowerCase().includes(q));
+          team.toLowerCase().includes(q) ||
+          (emp.designation || '').toLowerCase().includes(q));
       });
     }
+    
+    // Apply sorting
+    if (employeeSort === 'name') {
+      list.sort((a, b) => ((a.name || '').localeCompare(b.name || '')));
+    } else if (employeeSort === 'date') {
+      list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    } else if (employeeSort === 'status') {
+      list.sort((a, b) => (a.status || '').localeCompare(b.status || ''));
+    } else if (employeeSort === 'department') {
+      list.sort((a, b) => {
+        const deptA = deptMap[a.departmentId] || '';
+        const deptB = deptMap[b.departmentId] || '';
+        return deptA.localeCompare(deptB);
+      });
+    }
+    
     return list;
-  }, [employees, searchQuery, activeFilter, deptMap]);
+  }, [employees, searchQuery, activeFilter, employeeFilter, employeeSort, deptMap]);
 
   const totalPages = serverTotalPages != null ? Math.max(1, serverTotalPages) : Math.max(1, Math.ceil(filteredEmployees.length / pageSize));
   const pageItems = useMemo(() => {
@@ -366,9 +429,8 @@ const EmployeeManagement = () => {
     return filteredDepartments.slice(start, start + deptPageSize);
   }, [filteredDepartments, deptPage, deptPageSize, deptServerTotalPages]);
 
-  // -----------------------------
+
   // Notification functions
-  // -----------------------------
   const addNotification = useCallback((message, type = 'success') => {
     const id = Date.now() + Math.random();
     setNotifications(prev => [...prev, { id, message, type }]);
@@ -382,10 +444,7 @@ const EmployeeManagement = () => {
   const removeNotification = useCallback((id) => {
     setNotifications(prev => prev.filter(notification => notification.id !== id));
   }, []);
-
-  // -----------------------------
   // export CSV
-  // -----------------------------
   const downloadCSV = (rows, filename = 'employees.csv') => {
     if (!rows || rows.length === 0) return;
     const keys = Object.keys(rows[0]);
@@ -406,7 +465,9 @@ const EmployeeManagement = () => {
       let exportList = [];
       if (serverTotalDocs != null && serverTotalDocs > employees.length) {
         try {
-          const res = await axios.get('https://insightsconsult-backend.onrender.com/employee', { params: { page: 1, limit: serverTotalDocs } });
+          const res = await axiosInstance.get('/employee', {
+  params: { page: 1, limit: serverTotalDocs },
+});
           const payload = res?.data ?? {};
           exportList = Array.isArray(payload.data) ? payload.data : [];
         } catch (err) {
@@ -445,10 +506,7 @@ const EmployeeManagement = () => {
       addNotification('Export failed. Please try again.', 'error');
     }
   };
-
-  // -----------------------------
   // employee actions
-  // -----------------------------
   const handleEdit = (emp) => { setEditingEmployee(emp || null); setModalOpen(true); };
   const handleDelete = (emp) => { setEmployeeToDelete(emp); setDeleteError(null); setShowDeleteConfirm(true); };
 
@@ -466,9 +524,7 @@ const EmployeeManagement = () => {
     }
 
     try {
-      await axios.delete(
-        `https://insightsconsult-backend.onrender.com/employee/${id}`
-      );
+     await axiosInstance.delete(`/employee/${id}`);
 
       await fetchEmployees(page);
       await fetchDashboardStats();
@@ -494,9 +550,7 @@ const EmployeeManagement = () => {
     fetchEmployees(page); setModalOpen(false); setEditingEmployee(null); fetchDepartments(deptPage); fetchDashboardStats();
   };
 
-  // -----------------------------
   // department actions
-  // -----------------------------
   const handleViewDept = (d) => console.log('View dept', d);
   const handleEditDept = (d) => { setSelectedCategory(d || null); setOpen(true); };
   const handleDeleteDept = (d) => { setDeptToDelete(d); setDeptDeleteError(null); setShowDeptDeleteConfirm(true); };
@@ -515,9 +569,8 @@ const EmployeeManagement = () => {
     }
 
     try {
-      await axios.delete(
-        `https://insightsconsult-backend.onrender.com/department/${id}`
-      );
+     await axiosInstance.delete(`/department/${id}`);
+
 
       await fetchDepartments(1);
       await fetchDashboardStats();
@@ -536,9 +589,8 @@ const EmployeeManagement = () => {
 
   const cancelDeleteDept = () => { setShowDeptDeleteConfirm(false); setDeptToDelete(null); setDeptDeleteError(null); };
 
-  // -----------------------------
   // UI handlers
-  // -----------------------------
+
   const handleRefreshClick = () => { if (activeTab === 'employees') fetchEmployees(page); else if (activeTab === 'departments') fetchDepartments(deptPage); fetchDashboardStats(); };
 
   const refreshDepartmentsOnce = async () => {
@@ -548,8 +600,18 @@ const EmployeeManagement = () => {
   };
 
   const handleTabChange = (tabKey) => {
-    if (tabKey === 'employees') { setActiveFilter('All'); setSearchQuery(''); setPage(1); setError(null); }
-    else if (tabKey === 'departments') { setActiveFilter('null'); setDeptError(null); }
+    if (tabKey === 'employees') { 
+      setActiveFilter('All'); 
+      setEmployeeFilter('All');
+      setEmployeeSort('name');
+      setSearchQuery(''); 
+      setPage(1); 
+      setError(null); 
+    }
+    else if (tabKey === 'departments') { 
+      setActiveFilter('null'); 
+      setDeptError(null); 
+    }
     setActiveTab(tabKey);
   };
 
@@ -569,7 +631,22 @@ const EmployeeManagement = () => {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 md:gap-4 mb-6">
             <div className=" relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input type="text" placeholder="Search" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base" />
+              <input type="text" placeholder="Search employees (name, ID, email, phone, team)" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base" />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <select value={employeeFilter} onChange={(e) => { setEmployeeFilter(e.target.value); setPage(1); }} className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-0 text-sm">
+                <option value="All">All Status</option>
+                <option value="Active">Active Only</option>
+                <option value="Inactive">Inactive Only</option>
+              </select>
+
+              <select value={employeeSort} onChange={(e) => { setEmployeeSort(e.target.value); setPage(1); }} className="px-3 py-2 border border-gray-300 focus:outline-0 rounded-lg text-sm">
+                <option value="name">Sort: Name</option>
+                <option value="date">Sort: Newest</option>
+                <option value="status">Sort: Status</option>
+                <option value="department">Sort: Department</option>
+              </select>
             </div>
           </div>
 
@@ -801,7 +878,7 @@ const EmployeeManagement = () => {
               className="flex items-center gap-2 px-3 md:px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm md:text-base whitespace-nowrap"
             >
               <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Bulk Export</span>
+              <span className="hidden sm:inline">Export Employee data</span>
               <span className="sm:hidden">Export</span>
             </button>
           </div>
@@ -814,7 +891,7 @@ const EmployeeManagement = () => {
             <h2 className="text-base md:text-lg font-semibold lg:border-r-2 border-gray-300 col-span-2 lg:col-span-1 text-gray-900">Employee Database</h2>
             {stats.map((stat, index) => (
               <div key={index} className="flex items-center gap-2 lg:border-r-2 border-gray-300 last:border-r-0">
-                <div className="rounded-md text-white px-2 py-2 primary flex items-center justify-center flex-shrink-0">
+                <div className="rounded-md text-white px-2 py-2 bg-primary flex items-center justify-center flex-shrink-0">
                   <stat.icon className=" text-2xl" />
                 </div>
                 <div><p className="text-xs md:text-sm text-gray-600">{stat.label}</p></div>
