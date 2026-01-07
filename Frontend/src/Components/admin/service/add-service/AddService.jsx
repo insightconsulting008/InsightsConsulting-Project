@@ -6,7 +6,6 @@ import PricingSetup from './steps/PricingSetup';
 import DatasetSetup from './steps/DatasetSetup';
 import ChecklistSetup from './steps/ChecklistSetup';
 import ReviewPublish from './steps/ReviewPublish';
-import NavigationButtons from './NavigationButtons';
 
 function AddServiceContent() {
   const { currentStep } = useService();
@@ -78,13 +77,6 @@ function AddServiceContent() {
               <div className="p-6">
                 {renderStep()}
               </div>
-
-              {/* Navigation Buttons */}
-              {currentStep < 5 && (
-                <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-                  <NavigationButtons />
-                </div>
-              )}
             </div>
           </div>
         </div>

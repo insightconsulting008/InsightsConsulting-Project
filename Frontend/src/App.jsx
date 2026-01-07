@@ -3,8 +3,9 @@ import AdminNav from './Components/admin/Navbar/AdminNav'
 import { BrowserRouter, Routes,Route } from 'react-router-dom'
 import Employe from './Components/admin/employee_repo/Employe'
 import AddService from './Components/admin/service/add-service/AddService';
-import GetServive from './Components/admin/service/GetService';
 import Service from './Components/admin/service/Service';
+import ViewService from './Components/admin/service/get-service/ViewService';
+import EditService from './Components/admin/service/get-service/EditService';
 
 
 const App = (refreshDepartmentsTrigger, setRefreshDepartmentsTrigger) => {
@@ -33,6 +34,8 @@ const App = (refreshDepartmentsTrigger, setRefreshDepartmentsTrigger) => {
               <Service/>
             }
           />
+           <Route path="/service/view/:serviceId" element={<ViewService />} />
+           <Route path="/service/edit/:serviceId" element={<EditService />} />
         </Routes>
         <AdminNav setRefreshDepartmentsTrigger={setRefreshDepartmentsTrigger} />
       </BrowserRouter>
