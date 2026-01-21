@@ -1,6 +1,7 @@
 import React from 'react';
 import { useService } from '../ServiceContext';
 import { Edit2, CheckCircle } from 'lucide-react';
+import {useNavigate } from 'react-router-dom';
 
 export default function ReviewPublish() {
   const {
@@ -27,6 +28,8 @@ export default function ReviewPublish() {
     showSuccessPopup,
     setShowSuccessPopup,
   } = useService();
+
+  const navigate = useNavigate();
 
   const handleSubmit = async () => {
     setError('');
@@ -58,28 +61,27 @@ export default function ReviewPublish() {
         console.log('Added unsaved custom field:', field);
       }
   
-      // BASIC VALIDATION
-      const validationErrors = [];
-      
-      if (!basicInfo.categoryId) validationErrors.push('Category is required');
-      if (!basicInfo.subCategoryId) validationErrors.push('Subcategory is required');
-      if (!basicInfo.name) validationErrors.push('Service name is required');
-      if (!basicInfo.description) validationErrors.push('Description is required');
-      if (!basicInfo.individualPrice) validationErrors.push('Individual price is required');
-      if (!basicInfo.offerPrice) validationErrors.push('Offer price is required');
-      if (!basicInfo.serviceType) validationErrors.push('Service type is required');
-      if (!basicInfo.photoFile) validationErrors.push('Service image is required');
-  
-      if (basicInfo.serviceType === 'RECURRING') {
-        if (!basicInfo.frequency) validationErrors.push('Frequency is required');
-        if (!basicInfo.duration) validationErrors.push('Duration is required');
-        if (!basicInfo.durationUnit) validationErrors.push('Duration unit is required');
-      }
-  
-      if (validationErrors.length > 0) {
-        throw new Error('Please fix the following errors: ' + validationErrors.join(', '));
-      }
-  
+     // BASIC VALIDATION
+const validationErrors = [];
+
+if (!basicInfo.categoryId) validationErrors.push('Category is required');
+if (!basicInfo.subCategoryId) validationErrors.push('Subcategory is required');
+if (!basicInfo.name) validationErrors.push('Service name is required');
+if (!basicInfo.description) validationErrors.push('Description is required');
+if (!basicInfo.individualPrice) validationErrors.push('Individual price is required');
+if (!basicInfo.offerPrice) validationErrors.push('Offer price is required');
+if (!basicInfo.serviceType) validationErrors.push('Service type is required');
+if (!basicInfo.photoFile) validationErrors.push('Service image is required');
+
+if (basicInfo.serviceType === 'RECURRING') {
+  if (!basicInfo.frequency) validationErrors.push('Frequency is required');
+  if (!basicInfo.duration) validationErrors.push('Duration value is required'); // FIXED: changed from 'duration' to 'durationValue'
+  if (!basicInfo.durationUnit) validationErrors.push('Duration unit is required');
+}
+
+if (validationErrors.length > 0) {
+  throw new Error('Please fix the following errors: ' + validationErrors.join(', '));
+}
       // STEP 1: Create FormData and append service data and image file
       console.log('Creating FormData for service creation...');
       
@@ -594,6 +596,7 @@ export default function ReviewPublish() {
                   onClick={() => {
                     resetForm();
                     setShowSuccessPopup(false);
+                    navigate('/service-hub')
                     // You can navigate to service list page here if needed
                   }}
                   className="flex-1 py-3 rounded-lg font-semibold text-white text-sm sm:text-base bg-[#6869AC] hover:opacity-90"

@@ -135,7 +135,12 @@ export const ServiceProvider = ({ children }) => {
         if (!basicInfo.subCategoryId) errors.subCategoryId = 'Subcategory is required';
         if (!basicInfo.name) errors.name = 'Service name is required';
         if (!basicInfo.description) errors.description = 'Description is required';
-        if (!basicInfo.photoFile) errors.photoUrl = 'Service image is required';
+        // Image validation
+      if (!basicInfo.photoFile) {
+        errors.photoUrl = 'Service image is required';
+      } else if (basicInfo.photoFile.size > 10 * 1024 * 512) { // 10MB check
+        errors.photoUrl = 'Image size should be less than 10MB';
+      }
         
         if (basicInfo.serviceType === 'RECURRING') {
           if (!basicInfo.frequency) errors.frequency = 'Frequency is required';
