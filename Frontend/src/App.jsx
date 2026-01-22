@@ -12,6 +12,7 @@ import Service from "./Components/admin/service/Service";
 import UserDashboard from "./Components/user/UserDashboard";
 import AdminDashboard from "./Components/admin/AdminDashboard";
 import StaffDashboard from "./Components/staff/StaffDashboard";
+import PaymentSettings from "./Components/admin/settings/PaymentSettings";
 
 /* ===========================
    Navbar Controller Component
@@ -60,6 +61,7 @@ const App = () => {
         <Route path="/employee-repo" element={<Employe />} />
         <Route path="/add-service" element={<AddService />} />
         <Route path="/service-hub" element={<Service />} />
+        <Route path="/settings" element={<PaymentSettings />} />
 
         {/* Staff */}
         <Route path="/staff/dashboard" element={<StaffDashboard />} />
