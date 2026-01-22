@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 import AdminNav from "./Components/admin/Navbar/AdminNav";
-import StaffNav from "./Components/staff/StaffNav";
+import StaffNav from "./Components/staff/staff-navbar/StaffNav";
 import UserNav from "./Components/user/UserNav";
 
 import Login from "./Components/auth/Login";
@@ -18,7 +18,10 @@ import GetService from "./Components/user/service/GetService";
 import MyService from "./Components/user/my-service/MyService";
 import AddBundleService from "./Components/admin/service/add-service/AddBundleService";
 import OrderManagement from "./Components/admin/order-management/OrderManagement";
+import ViewOrder from "./Components/admin/order-management/ViewOrder";
 
+
+import StaffMyService from "./Components/staff/my-service/MyService";
 /* ===========================
    Navbar Controller Component
 =========================== */
@@ -73,9 +76,11 @@ const App = () => {
         <Route path="/service/edit/:serviceId" element={<EditService />} />
         <Route path="/add-bundle-service" element={<AddBundleService />} />
         <Route path="/order-management" element={<OrderManagement />} />
+        <Route path="/orders/:applicationId" element={<ViewOrder />} />
 
         {/* Staff */}
         <Route path="/staff/dashboard" element={<StaffDashboard />} />
+        <Route path="/staff/my-services" element={<StaffMyService />} />
 
         {/* User */}
         <Route path="/user/dashboard" element={<UserDashboard />} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Search, 
   ChevronLeft, 
@@ -33,9 +33,14 @@ import {
   FileBarChart,
   Check,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle,
+  Info,
+  Pencil,
+  Edit
 } from 'lucide-react';
 import axiosInstance from '@src/providers/axiosInstance';
+import { useNavigate } from 'react-router-dom';
 
 export default function OrderManagement() {
   // State Management
@@ -56,7 +61,18 @@ export default function OrderManagement() {
   const [reassigning, setReassigning] = useState(false);
   const [assignError, setAssignError] = useState('');
   const [showReassignSection, setShowReassignSection] = useState(false);
+  const [employeeLoading, setEmployeeLoading] = useState(false);
+  const [departments, setDepartments] = useState(['All']);
+  const [employeePage, setEmployeePage] = useState(1);
+  const [hasMoreEmployees, setHasMoreEmployees] = useState(true);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
+  const [showReassignConfirm, setShowReassignConfirm] = useState(false);
+  const [reassignData, setReassignData] = useState(null);
   const itemsPerPage = 50;
+  const employeeItemsPerPage = 100;
+  const navigate = useNavigate();
 
   // Status colors
   const statusColors = {
@@ -86,6 +102,9 @@ export default function OrderManagement() {
     }
   };
 
+  // Refs for debouncing
+  const searchTimeoutRef = useRef(null);
+
   // Fetch Applications on Mount
   useEffect(() => {
     fetchApplications();
@@ -100,21 +119,101 @@ export default function OrderManagement() {
       }
     } catch (error) {
       console.error('Error fetching applications:', error);
+      showError('Failed to load orders. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchEmployees = async () => {
+  // Custom debounce function
+  const debounceSearch = (func, delay) => {
+    return (...args) => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      searchTimeoutRef.current = setTimeout(() => func(...args), delay);
+    };
+  };
+
+  // Fetch employees with search - with custom debounce
+  const fetchEmployees = useCallback(async (search = '', department = 'All', page = 1, isInitial = false) => {
     try {
-      const response = await axiosInstance.get('https://insightsconsult-backend.onrender.com/admin/employees/assignable?page=1&limit=100');
+      setEmployeeLoading(true);
+      
+      // Build query parameters
+      let queryParams = `?page=${page}&limit=${employeeItemsPerPage}`;
+      
+      if (search.trim()) {
+        queryParams += `&search=${encodeURIComponent(search)}`;
+      }
+      
+      const response = await axiosInstance.get(
+        `https://insightsconsult-backend.onrender.com/admin/employees/assignable${queryParams}`
+      );
+      
       if (response.data.success) {
-        setEmployees(response.data.data);
+        if (isInitial || page === 1) {
+          setEmployees(response.data.data || []);
+          
+          // Extract unique departments
+          const uniqueDepts = ['All'];
+          response.data.data?.forEach(emp => {
+            if (emp.department?.name && !uniqueDepts.includes(emp.department.name)) {
+              uniqueDepts.push(emp.department.name);
+            }
+          });
+          setDepartments(uniqueDepts);
+        } else {
+          setEmployees(prev => [...prev, ...(response.data.data || [])]);
+        }
+        
+        // Check if there are more employees to load
+        setHasMoreEmployees(
+          response.data.data?.length === employeeItemsPerPage
+        );
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
+      setEmployees([]);
+      showError('Failed to load employees. Please try again.');
+    } finally {
+      setEmployeeLoading(false);
     }
-  };
+  }, []);
+
+  // Debounced employee search handler
+  const handleEmployeeSearch = useCallback(
+    debounceSearch((search, department, page, isInitial) => {
+      fetchEmployees(search, department, page, isInitial);
+    }, 500),
+    [fetchEmployees]
+  );
+
+  // Handle employee search change
+  useEffect(() => {
+    if (showAssignPanel || showReassignSection) {
+      setEmployeePage(1);
+      handleEmployeeSearch(employeeSearch, selectedDepartment, 1, true);
+    }
+  }, [employeeSearch, selectedDepartment, showAssignPanel, showReassignSection, handleEmployeeSearch]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Load more employees
+  const loadMoreEmployees = useCallback(() => {
+    if (!employeeLoading && hasMoreEmployees) {
+      const nextPage = employeePage + 1;
+      setEmployeePage(nextPage);
+      handleEmployeeSearch(employeeSearch, selectedDepartment, nextPage, false);
+    }
+  }, [employeeLoading, hasMoreEmployees, employeePage, employeeSearch, selectedDepartment, handleEmployeeSearch]);
 
   const handleAssignClick = (order) => {
     setSelectedOrder(order);
@@ -123,22 +222,84 @@ export default function OrderManagement() {
     setSelectedEmployee(null);
     setRemarks('');
     setAssignError('');
-    fetchEmployees();
+    setEmployeeSearch('');
+    setSelectedDepartment('All');
+    setEmployeePage(1);
+    handleEmployeeSearch('', 'All', 1, true);
   };
 
-  const handleViewTicket = (order) => {
+  const handleReassignClick = (order) => {
     setSelectedOrder(order);
     setShowTicketInfo(true);
-    setShowAssignPanel(false);
-    setShowReassignSection(false);
-  };
-
-  const handleReassignClick = () => {
     setShowReassignSection(true);
+    setShowAssignPanel(false);
     setSelectedEmployee(null);
     setRemarks('');
     setAssignError('');
-    fetchEmployees();
+    setEmployeeSearch('');
+    setSelectedDepartment('All');
+    setEmployeePage(1);
+    handleEmployeeSearch('', 'All', 1, true);
+  };
+
+  const handleViewOrder = (order) => {
+    navigate(`/orders/${order.applicationId}`);
+  };
+
+  // Show success popup
+  const showSuccess = (message) => {
+    setPopupMessage(message);
+    setShowSuccessPopup(true);
+    setTimeout(() => {
+      setShowSuccessPopup(false);
+    }, 3000);
+  };
+
+  // Show error popup
+  const showError = (message) => {
+    setPopupMessage(message);
+    setShowErrorPopup(true);
+    setTimeout(() => {
+      setShowErrorPopup(false);
+    }, 3000);
+  };
+
+  // Handle reassign confirmation
+  const handleReassignConfirm = (data) => {
+    setReassignData(data);
+    setShowReassignConfirm(true);
+  };
+
+  // Execute reassign after confirmation
+  const executeReassign = async () => {
+    setReassigning(true);
+    setAssignError('');
+    
+    try {
+      const response = await axiosInstance.post(
+        `https://insightsconsult-backend.onrender.com/admin/applications/${reassignData.order.applicationId}/assign`,
+        {
+          employeeId: reassignData.employee.employeeId,
+          adminNote: reassignData.remarks || "Reassigned order."
+        }
+      );
+
+      if (response.data.success) {
+        showSuccess(`Order reassigned to ${reassignData.employee.name} successfully!`);
+        setShowReassignSection(false);
+        setShowReassignConfirm(false);
+        setShowTicketInfo(false);
+        await fetchApplications();
+      } else {
+        showError(response.data.message || 'Failed to reassign order');
+      }
+    } catch (error) {
+      console.error('Error reassigning order:', error);
+      showError(error.response?.data?.message || 'Failed to reassign order. Please try again.');
+    } finally {
+      setReassigning(false);
+      setReassignData(null);
+    }
   };
 
   const handleAssignOrder = async (isReassign = false) => {
@@ -152,12 +313,18 @@ export default function OrderManagement() {
       return;
     }
 
+    // For reassign, show confirmation
     if (isReassign) {
-      setReassigning(true);
-    } else {
-      setAssigning(true);
+      handleReassignConfirm({
+        order: selectedOrder,
+        employee: selectedEmployee,
+        remarks: remarks
+      });
+      return;
     }
-    
+
+    // For new assignment
+    setAssigning(true);
     setAssignError('');
 
     try {
@@ -166,28 +333,24 @@ export default function OrderManagement() {
         adminNote: remarks || "This is a priority client. Please request documents and complete."
       };
 
-      const endpoint = isReassign 
-        ? `https://insightsconsult-backend.onrender.com/admin/applications/${selectedOrder.applicationId}/reassign`
-        : `https://insightsconsult-backend.onrender.com/admin/applications/${selectedOrder.applicationId}/assign`;
-
-      const response = await axiosInstance.post(endpoint, assignmentData);
+      const response = await axiosInstance.post(
+        `https://insightsconsult-backend.onrender.com/admin/applications/${selectedOrder.applicationId}/assign`,
+        assignmentData
+      );
 
       if (response.data.success) {
+        showSuccess(`Order assigned to ${selectedEmployee.name} successfully!`);
         setShowAssignPanel(false);
         setShowReassignSection(false);
         await fetchApplications();
       } else {
-        setAssignError(response.data.message || `Failed to ${isReassign ? 'reassign' : 'assign'} order`);
+        showError(response.data.message || 'Failed to assign order');
       }
     } catch (error) {
-      console.error(`Error ${isReassign ? 'reassigning' : 'assigning'} order:`, error);
-      setAssignError(error.response?.data?.message || `Failed to ${isReassign ? 'reassign' : 'assign'} order. Please try again.`);
+      console.error('Error assigning order:', error);
+      showError(error.response?.data?.message || 'Failed to assign order. Please try again.');
     } finally {
-      if (isReassign) {
-        setReassigning(false);
-      } else {
-        setAssigning(false);
-      }
+      setAssigning(false);
     }
   };
 
@@ -195,6 +358,7 @@ export default function OrderManagement() {
     setShowAssignPanel(false);
     setShowTicketInfo(false);
     setShowReassignSection(false);
+    setShowReassignConfirm(false);
   };
 
   // Statistics
@@ -208,21 +372,18 @@ export default function OrderManagement() {
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          app.applicationId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (app.clientName && app.clientName.toLowerCase().includes(searchTerm.toLowerCase()));
+                         (app.clientName && app.clientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (app.employeeName && app.employeeName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === 'All' || 
                          (statusFilter === 'Unassigned' && app.status === 'PENDING') ||
                          (statusFilter === 'Assigned' && app.status === 'ASSIGNED');
     return matchesSearch && matchesStatus;
   });
 
-  // Employee Filtering
-  const departments = ['All', ...new Set(employees.map(emp => emp.department?.name).filter(Boolean))];
-  
+  // Employee Filtering - now handled by API
   const filteredEmployees = employees.filter(emp => {
-    const matchesSearch = emp.name.toLowerCase().includes(employeeSearch.toLowerCase()) ||
-                         emp.email.toLowerCase().includes(employeeSearch.toLowerCase());
     const matchesDepartment = selectedDepartment === 'All' || emp.department?.name === selectedDepartment;
-    return matchesSearch && matchesDepartment;
+    return matchesDepartment;
   });
 
   // Pagination
@@ -253,6 +414,17 @@ export default function OrderManagement() {
     });
   };
 
+  // Helper function to get employee initials
+  const getEmployeeInitials = (name) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   // Status Badge Component
   const StatusBadge = ({ status }) => {
     const statusConfig = statusColors[status] || statusColors.PENDING;
@@ -270,9 +442,142 @@ export default function OrderManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Success Popup */}
+      {showSuccessPopup && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg shadow-lg p-4 max-w-sm">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+              <p className="text-emerald-700 font-medium">{popupMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Popup */}
+      {showErrorPopup && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in">
+          <div className="bg-rose-50 border border-rose-200 rounded-lg shadow-lg p-4 max-w-sm">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+              <p className="text-rose-700 font-medium">{popupMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reassign Confirmation Popup */}
+      {showReassignConfirm && reassignData && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full animate-scale-in">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-amber-50 rounded-lg">
+                  <AlertTriangle className="w-6 h-6 text-amber-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Confirm Reassignment</h3>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm text-amber-800">
+                    Are you sure you want to reassign this order?
+                  </p>
+                </div>
+                
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Current Assignment</p>
+                    <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      {reassignData.order.employeeName ? (
+                        <>
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                            {reassignData.order.employeePhoto ? (
+                              <img 
+                                src={reassignData.order.employeePhoto} 
+                                alt={reassignData.order.employeeName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-4 h-4 text-gray-600" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{reassignData.order.employeeName}</p>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500">No one assigned</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-center">
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">New Assignment</p>
+                    <div className="flex items-center gap-2 p-2 bg-primary-50 rounded border border-primary-200">
+                      <img
+                        src={reassignData.employee.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(reassignData.employee.name)}&background=2563eb&color=fff`}
+                        alt={reassignData.employee.name}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-primary-900">{reassignData.employee.name}</p>
+                        <p className="text-xs text-primary-600">{reassignData.employee.department?.name}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {reassignData.remarks && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Notes</p>
+                    <div className="bg-gray-50 p-3 rounded text-sm text-gray-700">
+                      {reassignData.remarks}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowReassignConfirm(false);
+                    setReassignData(null);
+                  }}
+                  className="flex-1 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={executeReassign}
+                  disabled={reassigning}
+                  className="flex-1 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {reassigning ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Reassigning...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw size={20} />
+                      Confirm Reassign
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
       {showAssignPanel && (
-        <div className={`fixed inset-y-0 right-0 w-full sm:w-[480px] bg-white shadow-2xl z-50 transform transition-transform duration-300 border-l border-gray-200 translate-x-0`}>
+        <div className={`fixed inset-y-0 right-0 w-full sm:w-[480px] bg-white shadow-2xl z-40 transform transition-transform duration-300 border-l border-gray-200 translate-x-0`}>
           <AssignOrderPanel
             order={selectedOrder}
             employees={filteredEmployees}
@@ -291,12 +596,17 @@ export default function OrderManagement() {
             assignError={assignError}
             formatDate={formatDate}
             formatTime={formatTime}
+            employeeLoading={employeeLoading}
+            hasMoreEmployees={hasMoreEmployees}
+            loadMoreEmployees={loadMoreEmployees}
+            showError={showError}
+            getEmployeeInitials={getEmployeeInitials}
           />
         </div>
       )}
 
       {showTicketInfo && (
-        <div className={`fixed inset-y-0 right-0 w-full sm:w-[480px] bg-white shadow-2xl z-50 transform transition-transform duration-300 border-l border-gray-200 translate-x-0`}>
+        <div className={`fixed inset-y-0 right-0 w-full sm:w-[480px] bg-white shadow-2xl z-40 transform transition-transform duration-300 border-l border-gray-200 translate-x-0`}>
           <TicketInfoPanel
             order={selectedOrder}
             onClose={() => setShowTicketInfo(false)}
@@ -305,7 +615,7 @@ export default function OrderManagement() {
             formatTime={formatTime}
             showReassignSection={showReassignSection}
             setShowReassignSection={setShowReassignSection}
-            onReassignClick={handleReassignClick}
+            onReassign={() => handleAssignOrder(true)}
             employees={filteredEmployees}
             employeeSearch={employeeSearch}
             setEmployeeSearch={setEmployeeSearch}
@@ -316,9 +626,13 @@ export default function OrderManagement() {
             setSelectedEmployee={setSelectedEmployee}
             remarks={remarks}
             setRemarks={setRemarks}
-            onReassign={() => handleAssignOrder(true)}
             reassigning={reassigning}
             assignError={assignError}
+            employeeLoading={employeeLoading}
+            hasMoreEmployees={hasMoreEmployees}
+            loadMoreEmployees={loadMoreEmployees}
+            showError={showError}
+            getEmployeeInitials={getEmployeeInitials}
           />
         </div>
       )}
@@ -326,7 +640,7 @@ export default function OrderManagement() {
       {/* Overlay */}
       {(showAssignPanel || showTicketInfo) && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 bg-black/50 z-30"
           onClick={closeAllPanels}
         ></div>
       )}
@@ -435,7 +749,7 @@ export default function OrderManagement() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" size={20} />
                   <input
                     type="text"
-                    placeholder="Search orders by service, ID, or client..."
+                    placeholder="Search orders by service, ID, client, or assigned employee..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 pr-4 py-2.5 border border-gray-300 bg-white text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-full sm:w-64 transition-all"
@@ -525,10 +839,12 @@ export default function OrderManagement() {
                     key={app.applicationId} 
                     application={app}
                     onAssign={handleAssignClick}
-                    onView={handleViewTicket}
+                    onReassign={handleReassignClick}
+                    onView={handleViewOrder}
                     statusColors={statusColors}
                     formatDate={formatDate}
                     formatTime={formatTime}
+                    getEmployeeInitials={getEmployeeInitials}
                   />
                 ))}
               </div>
@@ -665,96 +981,114 @@ export default function OrderManagement() {
 }
 
 // Order Card Component
-function OrderCard({ application, onAssign, onView, statusColors, formatDate, formatTime }) {
+function OrderCard({ application, onAssign, onReassign, onView, statusColors, formatDate, formatTime, getEmployeeInitials }) {
   const statusConfig = statusColors[application.status] || statusColors.PENDING;
   const Icon = statusConfig.icon;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-        {/* Icon */}
-        <div className="flex-shrink-0">
-          <div className="w-12 h-12 bg-primary-50 rounded-lg flex items-center justify-center">
-            <Package className="w-6 h-6 text-primary" />
+    <div className="bg-white border border-gray-200 rounded-xl px-4 py-4 sm:px-6 hover:border-gray-300 transition">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 items-start sm:items-center gap-4 md:gap-6">
+
+        {/* ICON + SERVICE - Full width on mobile, 2 cols on sm, 2 cols on lg */}
+        <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-primary-50 rounded-full flex items-center justify-center shrink-0">
+            <Package className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+              {application.serviceName}
+            </p>
+            <button
+              onClick={() => onView(application)}
+              className="text-primary text-xs font-medium hover:underline flex items-center gap-1 mt-0.5"
+            >
+              <Eye size={12} />
+              View Order
+            </button>
           </div>
         </div>
 
-        {/* Service Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="font-semibold text-gray-900 text-base truncate">
-                  {application.serviceName}
-                </h3>
-                <button 
-                  onClick={() => onView(application)}
-                  className="text-sm text-primary hover:text-primary-dark font-medium flex items-center gap-1"
-                >
-                  <Eye size={14} />
-                  <span className="hidden sm:inline">View</span>
-                </button>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mb-3">
-                <span className="font-mono">ID: {application.applicationId.slice(0, 8)}</span>
-               
-              </div>
-            </div>
+        {/* ORDER ID - Full width on mobile, 1 col on sm, 2 cols on lg */}
+        <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+          <p className="text-xs text-gray-500 mb-1">Order ID</p>
+          <p className="font-medium text-gray-900 text-sm truncate" title={application.applicationId}>
+            <span className="hidden sm:inline">
+              {application.applicationId}
+            </span>
+            <span className="sm:hidden">
+              {application.applicationId.slice(0, 8)}...
+            </span>
+          </p>
+        </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
-              {/* Order ID */}
-              <div className="text-center lg:text-right">
-                <p className="text-xs text-gray-500 mb-1">Order ID</p>
-                <p className="font-medium text-gray-900 text-sm truncate">{application.applicationId.slice(0, 10)}</p>
-              </div>
+        {/* CLIENT - Full width on mobile, 1 col on sm, 2 cols on lg */}
+        <div className="col-span-1 sm:col-span-1 lg:col-span-2">
+          <p className="text-xs text-gray-500 mb-1">Client Name</p>
+          <p className="font-medium text-gray-900 text-sm truncate">
+            {application.clientName || 'Aswinth R'}
+          </p>
+        </div>
 
-              {/* Date & Time */}
-              <div className="text-center lg:text-right">
-                <p className="text-xs text-gray-500 mb-1">Date & Time</p>
-                <p className="font-medium text-gray-900 text-sm">
-                  <span className="block sm:inline">{formatDate(application.createdAt)}</span>
-                  <span className="hidden sm:inline"> • </span>
-                  <span className="block sm:inline">{formatTime(application.createdAt)}</span>
-                </p>
-              </div>
+        {/* DATE & TIME - Full width on mobile, 2 cols on sm, 3 cols on lg */}
+        <div className="col-span-1 sm:col-span-2 lg:col-span-3">
+          <p className="text-xs text-gray-500 mb-1">Date & Time</p>
+          <p className="font-medium text-gray-900 text-sm">
+            <span className="block sm:inline">{formatDate(application.createdAt)}</span>
+            <span className="hidden sm:inline"> – </span>
+            <span className="block sm:inline">{formatTime(application.createdAt)}</span>
+          </p>
+        </div>
 
-              {/* Order Value */}
-              <div className="text-center lg:text-right">
-                <p className="text-xs text-gray-500 mb-1">Order Value</p>
-                <p className="font-bold text-gray-900">₹{application.amount || '590.00'}</p>
-              </div>
+        {/* ORDER VALUE - Full width on mobile, 1 col on sm, 1 col on lg */}
+        <div className="col-span-1 sm:col-span-1 lg:col-span-1">
+          <p className="text-xs text-gray-500 mb-1">Order Value</p>
+          <p className="font-semibold text-gray-900 text-sm sm:text-base">
+            ₹{application.amount || '590.00'}
+          </p>
+        </div>
 
-              {/* Status and Action */}
-              <div className="flex flex-col items-center lg:items-end gap-2">
-                <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border ${statusConfig.border} ${statusConfig.bg}`}>
-                  <Icon size={12} className={statusConfig.iconColor} />
-                  <span className={`text-xs font-semibold ${statusConfig.text}`}>
-                    {statusConfig.label}
-                  </span>
-                </div>
-                
-                {application.status === 'PENDING' ? (
-                  <button 
-                    onClick={() => onAssign(application)}
-                    className="w-full px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 text-sm"
-                  >
-                    <Sparkles size={14} />
-                    Assign
-                  </button>
+        {/* ACTIONS - Full width on mobile, 2 cols on sm, 1 col on lg */}
+        <div className="col-span-1 sm:col-span-2 lg:col-span-2 lg:justify-self-end">
+          {application.status === 'PENDING' && (
+            <button
+              onClick={() => onAssign(application)}
+              className="w-full sm:w-auto px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition whitespace-nowrap"
+            >
+              Assign Order
+            </button>
+          )}
+
+          {application.status === 'ASSIGNED' && (
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden shrink-0">
+                {application.employeePhoto ? (
+                  <img 
+                    src={application.employeePhoto} 
+                    alt={application.employeeName}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <button 
-                    onClick={() => onView(application)}
-                    className="w-full px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 text-sm"
-                  >
-                    <Eye size={14} />
-                    View Details
-                  </button>
+                  <span className="text-primary font-semibold text-sm">
+                    {getEmployeeInitials(application.employeeName)}
+                  </span>
                 )}
               </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-800 truncate">
+                  {application.employeeName}
+                </p>
+              </div>
+              <button
+                onClick={() => onReassign(application)}
+                className="text-primary hover:text-primary-dark shrink-0"
+                title="Reassign"
+              >
+                <Edit size={16} />
+              </button>
             </div>
-          </div>
+          )}
         </div>
+
       </div>
     </div>
   );
@@ -778,8 +1112,35 @@ function AssignOrderPanel({
   assigning,
   assignError,
   formatDate,
-  formatTime
+  formatTime,
+  employeeLoading,
+  hasMoreEmployees,
+  loadMoreEmployees,
+  showError,
+  getEmployeeInitials
 }) {
+  const employeeListRef = React.useRef();
+  const searchInputRef = React.useRef();
+
+  // Handle scroll for infinite loading
+  React.useEffect(() => {
+    const listElement = employeeListRef.current;
+    if (!listElement) return;
+
+    const handleScroll = () => {
+      if (
+        listElement.scrollTop + listElement.clientHeight >= 
+        listElement.scrollHeight - 50 &&
+        !employeeLoading &&
+        hasMoreEmployees
+      ) {
+        loadMoreEmployees();
+      }
+    };
+
+    listElement.addEventListener('scroll', handleScroll);
+    return () => listElement.removeEventListener('scroll', handleScroll);
+  }, [employeeLoading, hasMoreEmployees, loadMoreEmployees]);
 
   return (
     <>
@@ -820,11 +1181,6 @@ function AssignOrderPanel({
             </p>
           </div>
 
-          <div className="rounded-xl overflow-hidden border border-gray-200">
-            <div className="w-full h-48 bg-primary-50 flex items-center justify-center">
-              <Package className="w-16 h-16 text-primary/50" />
-            </div>
-          </div>
 
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -863,12 +1219,16 @@ function AssignOrderPanel({
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
+                ref={searchInputRef}
                 type="text"
-                placeholder="Search by name or email..."
+                placeholder="Search by name, email, department, or employee ID..."
                 value={employeeSearch}
                 onChange={(e) => setEmployeeSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white transition-all"
               />
+              <div className="text-xs text-gray-500 mt-1 ml-1">
+                Search by: Name, Email, Department, Employee ID
+              </div>
             </div>
 
             {/* Department Filters */}
@@ -889,57 +1249,89 @@ function AssignOrderPanel({
             </div>
 
             {/* Employee List */}
-            <div className="space-y-3 max-h-64 overflow-y-auto">
-              {employees.length === 0 ? (
+            <div 
+              ref={employeeListRef}
+              className="space-y-3 max-h-64 overflow-y-auto"
+            >
+              {employeeLoading && employees.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
+                  <p className="text-gray-500 text-sm">Loading employees...</p>
+                </div>
+              ) : employees.length === 0 ? (
                 <div className="text-center py-4">
                   <p className="text-gray-500">No employees found</p>
                   <p className="text-sm text-gray-400 mt-1">Try changing your search or department filter</p>
                 </div>
               ) : (
-                employees.map((employee) => (
-                  <div
-                    key={employee.employeeId}
-                    onClick={() => setSelectedEmployee(employee)}
-                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border ${
-                      selectedEmployee?.employeeId === employee.employeeId
-                        ? 'bg-primary-50 border-primary-300'
-                        : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedEmployee?.employeeId === employee.employeeId}
-                      onChange={() => {}}
-                      className="w-5 h-5 text-primary rounded focus:ring-primary cursor-pointer"
-                    />
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <img
-                        src={employee.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=2563eb&color=fff`}
-                        alt={employee.name}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                <>
+                  {employees.map((employee) => (
+                    <div
+                      key={employee.employeeId}
+                      onClick={() => setSelectedEmployee(employee)}
+                      className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border ${
+                        selectedEmployee?.employeeId === employee.employeeId
+                          ? 'bg-primary-50 border-primary-300'
+                          : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedEmployee?.employeeId === employee.employeeId}
+                        onChange={() => {}}
+                        className="w-5 h-5 text-primary rounded focus:ring-primary cursor-pointer"
                       />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{employee.name}</p>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          {employee.department?.name && (
-                            <>
-                              <Building size={10} />
-                              <span>{employee.department.name}</span>
-                            </>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <img
+                          src={employee.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name)}&background=2563eb&color=fff`}
+                          alt={employee.name}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{employee.name}</p>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            {employee.department?.name && (
+                              <>
+                                <Building size={10} />
+                                <span>{employee.department.name}</span>
+                              </>
+                            )}
+                            {employee.employeeId && (
+                              <>
+                                <span>•</span>
+                                <span>ID: {employee.employeeId}</span>
+                              </>
+                            )}
+                          </div>
+                          {employee.email && (
+                            <p className="text-xs text-gray-400 truncate">{employee.email}</p>
                           )}
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                  
+                  {employeeLoading && (
+                    <div className="flex justify-center py-2">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                  )}
+                  
+                  {hasMoreEmployees && !employeeLoading && (
+                    <button
+                      onClick={loadMoreEmployees}
+                      className="w-full text-center text-sm text-primary hover:text-primary-dark py-2"
+                    >
+                      Load more employees...
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
 
-          {/* Priority Selection */}
+          {/* Admin Notes */}
           <div className="bg-white border border-gray-200 rounded-xl p-5">
-
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Admin Notes
@@ -998,7 +1390,7 @@ function AssignOrderPanel({
   );
 }
 
-// Ticket Info Panel Component
+// Ticket Info Panel Component - Updated for Reassign
 function TicketInfoPanel({ 
   order, 
   onClose, 
@@ -1007,7 +1399,7 @@ function TicketInfoPanel({
   formatTime,
   showReassignSection,
   setShowReassignSection,
-  onReassignClick,
+  onReassign,
   employees,
   employeeSearch,
   setEmployeeSearch,
@@ -1018,11 +1410,36 @@ function TicketInfoPanel({
   setSelectedEmployee,
   remarks,
   setRemarks,
-  onReassign,
   reassigning,
-  assignError
+  assignError,
+  employeeLoading,
+  hasMoreEmployees,
+  loadMoreEmployees,
+  showError,
+  getEmployeeInitials
 }) {
   const statusConfig = statusColors[order?.status] || statusColors.PENDING;
+  const employeeListRef = React.useRef();
+
+  // Handle scroll for infinite loading
+  React.useEffect(() => {
+    const listElement = employeeListRef.current;
+    if (!listElement) return;
+
+    const handleScroll = () => {
+      if (
+        listElement.scrollTop + listElement.clientHeight >= 
+        listElement.scrollHeight - 50 &&
+        !employeeLoading &&
+        hasMoreEmployees
+      ) {
+        loadMoreEmployees();
+      }
+    };
+
+    listElement.addEventListener('scroll', handleScroll);
+    return () => listElement.removeEventListener('scroll', handleScroll);
+  }, [employeeLoading, hasMoreEmployees, loadMoreEmployees]);
 
   return (
     <>
@@ -1032,8 +1449,8 @@ function TicketInfoPanel({
             onClick={onClose}
             className="flex items-center gap-2 text-primary font-medium text-sm hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
           >
-            <ChevronLeft size={20} />
-            Back
+            <X size={20} />
+            Close
           </button>
 
           <button className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-primary-dark border border-primary shadow-sm transition-colors">
@@ -1063,11 +1480,7 @@ function TicketInfoPanel({
             </p>
           </div>
 
-          <div className="rounded-xl overflow-hidden border border-gray-200">
-            <div className="w-full h-48 bg-primary-50 flex items-center justify-center">
-              <Package className="w-16 h-16 text-primary/50" />
-            </div>
-          </div>
+         
 
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -1089,122 +1502,88 @@ function TicketInfoPanel({
             </div>
           </div>
 
-          {/* Staff Assignment Section */}
-          {!showReassignSection ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <UserCheck size={18} className="text-gray-500" />
-                  Assigned Staff
-                </h3>
-                {order?.status === 'ASSIGNED' && (
-                  <button
-                    onClick={onReassignClick}
-                    className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center gap-2 text-sm"
-                  >
-                    <RefreshCw size={14} />
-                    Reassign
-                  </button>
-                )}
+          {/* Reassign Section */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <RefreshCw size={18} className="text-gray-500" />
+                Reassign Order
+              </h3>
+            </div>
+
+            {/* Employee Search */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, email, department, or employee ID..."
+                value={employeeSearch}
+                onChange={(e) => setEmployeeSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white transition-all"
+              />
+              <div className="text-xs text-gray-500 mt-1 ml-1">
+                Search by: Name, Email, Department, Employee ID
               </div>
-              
-              {order?.assignedTo ? (
-                <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50">
-                  <img
-                    src={order.assignedTo.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(order.assignedTo.name)}&background=2563eb&color=fff`}
-                    alt={order.assignedTo.name}
-                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{order.assignedTo.name}</p>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      {order.assignedTo.department?.name && (
-                        <>
-                          <Building size={10} />
-                          <span>{order.assignedTo.department.name}</span>
-                        </>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">ID: {order.assignedTo.employeeId}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-medium">
-                      Assigned
-                    </div>
-                  </div>
+            </div>
+
+            {/* Department Filters */}
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+              {departments.map(dept => (
+                <button
+                  key={dept}
+                  onClick={() => setSelectedDepartment(dept)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                    selectedDepartment === dept
+                      ? 'bg-primary text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {dept}
+                </button>
+              ))}
+            </div>
+
+            {/* Current Assignment */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Current Assignment</label>
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50">
+                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                  {order?.employeePhoto ? (
+                    <img 
+                      src={order.employeePhoto} 
+                      alt={order.employeeName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-gray-600" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">{order?.employeeName || 'Not assigned'}</p>
+                  <p className="text-xs text-gray-500">Currently assigned to this order</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Employee List */}
+            <div 
+              ref={employeeListRef}
+              className="space-y-3 max-h-64 overflow-y-auto mb-6"
+            >
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select New Employee</label>
+              {employeeLoading && employees.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
+                  <p className="text-gray-500 text-sm">Loading employees...</p>
+                </div>
+              ) : employees.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-gray-500">No employees found</p>
+                  <p className="text-sm text-gray-400 mt-1">Try changing your search or department filter</p>
                 </div>
               ) : (
-                <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                    <User className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h4 className="font-medium text-gray-900 mb-2">No Staff Assigned</h4>
-                  <p className="text-sm text-gray-500 mb-4">This order hasn't been assigned to any employee yet.</p>
-                  <button
-                    onClick={onReassignClick}
-                    className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors flex items-center gap-2 mx-auto"
-                  >
-                    <Sparkles size={14} />
-                    Assign Now
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Reassign Section */
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <RefreshCw size={18} className="text-gray-500" />
-                  Reassign Order
-                </h3>
-                <button
-                  onClick={() => setShowReassignSection(false)}
-                  className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                >
-                  <ChevronLeft size={14} />
-                  Back
-                </button>
-              </div>
-
-              {/* Employee Search */}
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name or email..."
-                  value={employeeSearch}
-                  onChange={(e) => setEmployeeSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white transition-all"
-                />
-              </div>
-
-              {/* Department Filters */}
-              <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-                {departments.map(dept => (
-                  <button
-                    key={dept}
-                    onClick={() => setSelectedDepartment(dept)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                      selectedDepartment === dept
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {dept}
-                  </button>
-                ))}
-              </div>
-
-              {/* Employee List */}
-              <div className="space-y-3 max-h-64 overflow-y-auto mb-6">
-                {employees.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500">No employees found</p>
-                    <p className="text-sm text-gray-400 mt-1">Try changing your search or department filter</p>
-                  </div>
-                ) : (
-                  employees.map((employee) => (
+                <>
+                  {employees.map((employee) => (
                     <div
                       key={employee.employeeId}
                       onClick={() => setSelectedEmployee(employee)}
@@ -1235,76 +1614,88 @@ function TicketInfoPanel({
                                 <span>{employee.department.name}</span>
                               </>
                             )}
+                            {employee.employeeId && (
+                              <>
+                                <span>•</span>
+                                <span>ID: {employee.employeeId}</span>
+                              </>
+                            )}
                           </div>
+                          {employee.email && (
+                            <p className="text-xs text-gray-400 truncate">{employee.email}</p>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-
-              {/* Admin Notes */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reassignment Notes
-                </label>
-                <textarea 
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white resize-none"
-                  rows="3"
-                  placeholder="Add notes explaining why you're reassigning this order..."
-                />
-              </div>
-
-              {/* Error Message */}
-              {assignError && (
-                <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg mb-6">
-                  <div className="flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
-                    <p className="text-rose-700 text-sm">{assignError}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                <button
-                  onClick={onReassign}
-                  disabled={!selectedEmployee || reassigning}
-                  className="w-full py-3.5 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                >
-                  {reassigning ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Reassigning...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw size={20} />
-                      Reassign Order
-                    </>
+                  ))}
+                  
+                  {employeeLoading && (
+                    <div className="flex justify-center py-2">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
                   )}
-                </button>
-                <button
-                  onClick={() => setShowReassignSection(false)}
-                  className="w-full py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-3"
-                >
-                  Cancel
-                </button>
-              </div>
+                  
+                  {hasMoreEmployees && !employeeLoading && (
+                    <button
+                      onClick={loadMoreEmployees}
+                      className="w-full text-center text-sm text-primary hover:text-primary-dark py-2"
+                    >
+                      Load more employees...
+                    </button>
+                  )}
+                </>
+              )}
             </div>
-          )}
 
-          {/* Additional Info */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1">Purchase Date</div>
-              <div className="font-medium text-sm">{formatDate(order?.createdAt)}</div>
+            {/* Admin Notes */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reassignment Notes
+              </label>
+              <textarea 
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white resize-none"
+                rows="3"
+                placeholder="Add notes explaining why you're reassigning this order..."
+              />
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-              <div className="text-xs text-gray-500 mb-1">Service Type</div>
-              <div className="font-medium text-sm">Standard Service</div>
+
+            {/* Error Message */}
+            {assignError && (
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg mb-6">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+                  <p className="text-rose-700 text-sm">{assignError}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={onReassign}
+                disabled={!selectedEmployee || reassigning}
+                className="w-full py-3.5 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dark transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              >
+                {reassigning ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Reassigning...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw size={20} />
+                    Reassign Order
+                  </>
+                )}
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-3"
+              >
+                Cancel
+              </button>
             </div>
           </div>
 
@@ -1331,5 +1722,24 @@ function TicketInfoPanel({
         </div>
       </div>
     </>
+  );
+}
+
+// Missing ChevronDown icon component
+function ChevronDown({ className = "w-5 h-5" }) {
+  return (
+    <svg 
+      className={className} 
+      fill="none" 
+      stroke="currentColor" 
+      viewBox="0 0 24 24"
+    >
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M19 9l-7 7-7-7" 
+      />
+    </svg>
   );
 }
