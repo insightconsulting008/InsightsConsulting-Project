@@ -24,7 +24,7 @@ const StaffNav = () => {
 
   const navItems = [
     { path: '/staff/dashboard', icon: Home, label: 'Dashboard' },
-    { path: '/my-services', icon: Briefcase, label: 'My Services' },
+    { path: '/staff/my-services', icon: Briefcase, label: 'My Services' },
     { path: '/my-tasks', icon: CheckSquare, label: 'My Tasks' },
     { path: '/schedule', icon: Calendar, label: 'Schedule' },
     { path: '/compliance-reminder', icon: Bell, label: 'Compliance Reminder' },

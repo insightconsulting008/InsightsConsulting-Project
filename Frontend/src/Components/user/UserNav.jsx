@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Home,
   Briefcase,
+  Package,
   FileText,
   MessageSquare,
   CreditCard,
@@ -25,7 +26,8 @@ const UserNav = () => {
 
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
-    { path: '/my-services', icon: Briefcase, label: 'My Services' },
+    { path: '/my-services', icon: Package, label: 'My Services' },
+    { path: '/user/service-hub', icon: Briefcase, label: 'All Services' },
     { path: '/documents', icon: FileText, label: 'My Documents' },
     { path: '/messages', icon: MessageSquare, label: 'Messages' },
     { path: '/billing', icon: CreditCard, label: 'Billing & Payments' },

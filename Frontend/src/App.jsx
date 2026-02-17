@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 
 import AdminNav from "./Components/admin/Navbar/AdminNav";
-import StaffNav from "./Components/staff/StaffNav";
+import StaffNav from "./Components/staff/staff-navbar/StaffNav";
 import UserNav from "./Components/user/UserNav";
 
 import Login from "./Components/auth/Login";
@@ -13,10 +13,17 @@ import UserDashboard from "./Components/user/UserDashboard";
 import AdminDashboard from "./Components/admin/AdminDashboard";
 import StaffDashboard from "./Components/staff/StaffDashboard";
 import PaymentSettings from "./Components/admin/settings/PaymentSettings";
+import ViewService from "./Components/admin/service/get-service/ViewService";
+import EditService from "./Components/admin/service/get-service/EditService";
+import GetService from "./Components/user/service/GetService";
+import MyService from "./Components/user/my-service/MyService";
+import AddBundleService from "./Components/admin/service/add-service/AddBundleService";
+import OrderManagement from "./Components/admin/order-management/OrderManagement";
+import ViewOrder from "./Components/admin/order-management/ViewOrder";
 
-/* ===========================
-   Navbar Controller Component
-=========================== */
+
+import StaffMyService from "./Components/staff/my-service/MyService";
+
 const NavbarController = ({ setRefreshDepartmentsTrigger }) => {
   const location = useLocation();
   const role = sessionStorage.getItem("role");
@@ -29,7 +36,9 @@ const NavbarController = ({ setRefreshDepartmentsTrigger }) => {
 
   // ✅ Role-based navbar
   if (role === "ADMIN") {
-    return <AdminNav setRefreshDepartmentsTrigger={setRefreshDepartmentsTrigger} />;
+    return (
+      <AdminNav setRefreshDepartmentsTrigger={setRefreshDepartmentsTrigger} />
+    );
   }
 
   if (role === "STAFF") {
@@ -44,7 +53,8 @@ const NavbarController = ({ setRefreshDepartmentsTrigger }) => {
 };
 
 const App = () => {
-  const [refreshDepartmentsTrigger, setRefreshDepartmentsTrigger] = useState(false);
+  const [refreshDepartmentsTrigger, setRefreshDepartmentsTrigger] =
+    useState(false);
 
   return (
     <BrowserRouter>
@@ -62,12 +72,20 @@ const App = () => {
         <Route path="/add-service" element={<AddService />} />
         <Route path="/service-hub" element={<Service />} />
         <Route path="/settings" element={<PaymentSettings />} />
+        <Route path="/service/view/:serviceId" element={<ViewService />} />
+        <Route path="/service/edit/:serviceId" element={<EditService />} />
+        <Route path="/add-bundle-service" element={<AddBundleService />} />
+        <Route path="/order-management" element={<OrderManagement />} />
+        <Route path="/orders/:applicationId" element={<ViewOrder />} />
 
         {/* Staff */}
         <Route path="/staff/dashboard" element={<StaffDashboard />} />
+        <Route path="/staff/my-services" element={<StaffMyService />} />
 
         {/* User */}
         <Route path="/user/dashboard" element={<UserDashboard />} />
+        <Route path="/user/service-hub" element={<GetService />} />
+        <Route path="/my-services" element={<MyService />} />
       </Routes>
     </BrowserRouter>
   );

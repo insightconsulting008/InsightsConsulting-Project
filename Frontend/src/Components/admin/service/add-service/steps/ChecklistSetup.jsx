@@ -5,7 +5,11 @@ import { Plus, Trash2, Edit2, ArrowUp, ArrowDown, Check } from 'lucide-react';
 export default function ChecklistSetup() {
   const {
     trackSteps,
-    setTrackSteps
+    setTrackSteps,
+    stepErrors,
+    goToNextStep,
+    goToPreviousStep,
+    currentStep
   } = useService();
 
   const [editingStep, setEditingStep] = useState(null);
@@ -66,6 +70,12 @@ export default function ChecklistSetup() {
         </button>
       </div>
 
+      {stepErrors.trackSteps && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {stepErrors.trackSteps}
+        </div>
+      )}
+
       <div className="space-y-4">
         {trackSteps.map((step, idx) => (
           <div
@@ -74,31 +84,55 @@ export default function ChecklistSetup() {
           >
             {editingStep === idx ? (
               <div className="space-y-3">
-                <input
-                  type="text"
-                  value={step.title}
-                  onChange={(e) =>
-                    updateTrackStep(idx, 'title', e.target.value)
-                  }
-                  placeholder="Step title"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:border-[#6869AC] focus:ring-1 focus:ring-[#6869AC]"
-                />
-                <textarea
-                  value={step.description}
-                  onChange={(e) =>
-                    updateTrackStep(
-                      idx,
-                      'description',
-                      e.target.value
-                    )
-                  }
-                  placeholder="Step description"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#6869AC] focus:ring-1 focus:ring-[#6869AC]"
-                  rows={2}
-                />
+                <div>
+                  <input
+                    type="text"
+                    value={step.title}
+                    onChange={(e) =>
+                      updateTrackStep(idx, 'title', e.target.value)
+                    }
+                    placeholder="Step title"
+                    className={`w-full px-4 py-2 border rounded-lg text-sm font-medium focus:outline-none focus:ring-1 ${
+                      stepErrors[`step_${idx}_title`] 
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]'
+                    }`}
+                  />
+                  {stepErrors[`step_${idx}_title`] && (
+                    <p className="mt-1 text-sm text-red-600">{stepErrors[`step_${idx}_title`]}</p>
+                  )}
+                </div>
+                <div>
+                  <textarea
+                    value={step.description}
+                    onChange={(e) =>
+                      updateTrackStep(
+                        idx,
+                        'description',
+                        e.target.value
+                      )
+                    }
+                    placeholder="Step description"
+                    className={`w-full px-4 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-1 ${
+                      stepErrors[`step_${idx}_description`] 
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]'
+                    }`}
+                    rows={2}
+                  />
+                  {stepErrors[`step_${idx}_description`] && (
+                    <p className="mt-1 text-sm text-red-600">{stepErrors[`step_${idx}_description`]}</p>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setEditingStep(null)}
+                    onClick={() => {
+                      // Validate before saving
+                      if (!step.title || !step.description) {
+                        return;
+                      }
+                      setEditingStep(null);
+                    }}
                     className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm text-white hover:opacity-90 bg-[#6869AC]"
                   >
                     <Check className="w-4 h-4 mr-1" />
@@ -121,10 +155,10 @@ export default function ChecklistSetup() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
-                    {step.title}
+                    {step.title || 'Untitled Step'}
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                    {step.description}
+                    {step.description || 'No description'}
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -165,6 +199,22 @@ export default function ChecklistSetup() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-6 border-t border-gray-200">
+        <button
+          onClick={goToPreviousStep}
+          className="px-6 py-2 rounded-lg font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+        >
+          Previous
+        </button>
+        <button
+          onClick={goToNextStep}
+          className="px-6 py-2 rounded-lg font-medium bg-[#6869AC] text-white hover:opacity-90"
+        >
+          Next
+        </button>
       </div>
     </div>
   );

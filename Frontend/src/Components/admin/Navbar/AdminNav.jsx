@@ -42,7 +42,7 @@ const AdminNav = () => {
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/service-hub', icon: Briefcase, label: 'Service Hub' },
-    { path: '/lead-management', icon: Users, label: 'Lead Management' },
+    { path: '/order-management', icon: Users, label: 'Order Management' },
     { path: '/task-list', icon: CheckSquare, label: 'Task List' },
     { path: '/compliance-reminder', icon: Bell, label: 'Compliance Reminder' },
     { path: '/documents-hub', icon: FileText, label: 'Documents Hub' },

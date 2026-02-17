@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Eye, EyeOff, Save } from "lucide-react";
+
+const API_URL = "https://insightsconsult-backend.onrender.com/settings/payment";
 
 const PaymentSettings = () => {
   const [isRazorpayEnabled, setIsRazorpayEnabled] = useState(false);
@@ -15,89 +17,90 @@ const PaymentSettings = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-const handleSubmit = async () => {
-  setError("");
-  setSuccess("");
+  const [paymentMethods, setPaymentMethods] = useState([]);
 
-  // ✅ Must enable Razorpay
-  if (!isRazorpayEnabled) {
-    setError("Please enable Razorpay to save payment settings");
-    return;
-  }
+  /* ------------------------------------
+     GET PAYMENT SETTINGS
+  ------------------------------------ */
+  const fetchPaymentMethods = async () => {
+    try {
+      const res = await axios.get(API_URL);
 
-  // ✅ Razorpay Key ID
-  if (!razorpayKeyId.trim()) {
-    setError("Razorpay Key ID is required");
-    return;
-  }
-
-  if (!/^rzp_(test|live)_[a-zA-Z0-9]{10,}$/.test(razorpayKeyId)) {
-    setError("Invalid Razorpay Key ID format");
-    return;
-  }
-
-  // ✅ Razorpay Secret (FIXED REGEX)
-  if (!razorpaySecret.trim()) {
-    setError("Razorpay Secret Key is required");
-    return;
-  }
-
-  if (!/^[a-zA-Z0-9_]{20,50}$/.test(razorpaySecret)) {
-    setError("Invalid Razorpay Secret Key");
-    return;
-  }
-
-  // ✅ Webhook Secret
-  if (!webhookSecret.trim()) {
-    setError("Webhook Secret is required");
-    return;
-  }
-
-  if (webhookSecret.length < 10) {
-    setError("Webhook Secret must be at least 10 characters");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    await axios.post(
-      "https://insightsconsult-backend.onrender.com/settings/payment",
-      {
-        isRazorpayEnabled,
-        razorpayKeyId,
-        razorpaySecret,
-        webhookSecret,
-      },
-      {
-        headers: { "Content-Type": "application/json" },
+      if (res.data?.success) {
+        setPaymentMethods(res.data.data); // ✅ IMPORTANT
       }
-    );
+    } catch (err) {
+      console.error("Failed to fetch payment methods", err);
+    }
+  };
 
-    setSuccess("Payment settings saved successfully");
+  useEffect(() => {
+    fetchPaymentMethods();
+  }, []);
 
-    // ✅ Clear fields
-    setIsRazorpayEnabled(false);
-    setRazorpayKeyId("");
-    setRazorpaySecret("");
-    setWebhookSecret("");
+  /* ------------------------------------
+     SAVE PAYMENT SETTINGS
+  ------------------------------------ */
+  const handleSubmit = async () => {
+    setError("");
+    setSuccess("");
 
-    setTimeout(() => setSuccess(""), 3000);
+    if (!isRazorpayEnabled) {
+      setError("Please enable Razorpay to save payment settings");
+      return;
+    }
 
-  } catch (err) {
-    setError("Failed to save payment settings");
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!razorpayKeyId.trim()) {
+      setError("Razorpay Key ID is required");
+      return;
+    }
 
+    if (!razorpaySecret.trim()) {
+      setError("Razorpay Secret Key is required");
+      return;
+    }
 
+    if (!webhookSecret.trim()) {
+      setError("Webhook Secret is required");
+      return;
+    }
 
+    setLoading(true);
 
+    try {
+      await axios.post(
+        API_URL,
+        {
+          isRazorpayEnabled,
+          razorpayKeyId,
+          razorpaySecret,
+          webhookSecret,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      setSuccess("Payment settings saved successfully");
+
+      setIsRazorpayEnabled(false);
+      setRazorpayKeyId("");
+      setRazorpaySecret("");
+      setWebhookSecret("");
+
+      fetchPaymentMethods(); // ✅ refresh list
+
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError("Failed to save payment settings");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="pl-20 container mx-auto  ">
-      {/* Header */}
+    <div className="pl-20 container mx-auto">
+      {/* HEADER */}
       <div className="bg-[#6869AC] rounded-xl p-6 text-white">
         <h1 className="text-2xl font-bold">Payment Settings</h1>
         <p className="text-sm opacity-90">
@@ -105,28 +108,26 @@ const handleSubmit = async () => {
         </p>
       </div>
 
-      {/* Error */}
+      {/* ERROR */}
       {error && (
         <div className="mt-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
           ❌ {error}
         </div>
       )}
 
-      {/* Success */}
+      {/* SUCCESS */}
       {success && (
         <div className="mt-6 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg">
           ✅ {success}
         </div>
       )}
 
-      {/* Card */}
-      <div className="mt-8 m-2 bg-white   rounded-xl shadow-sm p-3 space-y-6">
-        {/* Toggle */}
+      {/* FORM */}
+      <div className="mt-8 bg-white rounded-xl shadow-sm p-6 space-y-6">
+        {/* TOGGLE */}
         <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
           <div>
-            <h3 className="font-semibold text-gray-800">
-              Enable Razorpay
-            </h3>
+            <h3 className="font-semibold text-gray-800">Enable Razorpay</h3>
             <p className="text-sm text-gray-500">
               Activate Razorpay payment processing
             </p>
@@ -146,60 +147,44 @@ const handleSubmit = async () => {
           </button>
         </div>
 
-        {/* Inputs */}
-       <div className="grid  grid-cols-2 gap-5">
-         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Razorpay Key ID
-          </label>
+        {/* INPUTS */}
+        <div className="grid grid-cols-2 gap-5">
           <input
             type="text"
+            placeholder="Razorpay Key ID"
             value={razorpayKeyId}
             onChange={(e) => setRazorpayKeyId(e.target.value)}
-            placeholder="rzp_live_xxxxxxxxxx"
-            className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="border rounded-lg px-4 py-2"
           />
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Razorpay Secret Key
-          </label>
           <div className="relative">
             <input
               type={showRazorpaySecret ? "text" : "password"}
+              placeholder="Razorpay Secret Key"
               value={razorpaySecret}
               onChange={(e) => setRazorpaySecret(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border rounded-lg px-4 py-2 w-full"
             />
             <button
               type="button"
-              onClick={() =>
-                setShowRazorpaySecret(!showRazorpaySecret)
-              }
+              onClick={() => setShowRazorpaySecret(!showRazorpaySecret)}
               className="absolute right-3 top-2.5 text-gray-500"
             >
               {showRazorpaySecret ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-        </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Webhook Secret
-          </label>
           <div className="relative">
             <input
               type={showWebhookSecret ? "text" : "password"}
+              placeholder="Webhook Secret"
               value={webhookSecret}
               onChange={(e) => setWebhookSecret(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-blue-500 outline-none"
+              className="border rounded-lg px-4 py-2 w-full"
             />
             <button
               type="button"
-              onClick={() =>
-                setShowWebhookSecret(!showWebhookSecret)
-              }
+              onClick={() => setShowWebhookSecret(!showWebhookSecret)}
               className="absolute right-3 top-2.5 text-gray-500"
             >
               {showWebhookSecret ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -207,23 +192,74 @@ const handleSubmit = async () => {
           </div>
         </div>
 
-        {/* Save Button */}
-       
-       </div>
-        <div className="w-full flex justify-end items-end">
-            <button
-          onClick={handleSubmit}
-          disabled={loading}
-          className=" px-10 py-3 flex items-center gap-2  bg-[#6869AC] hover:bg-blue-700 text-white font-semibold rounded-xl transition disabled:opacity-50"
-        >
-          <Save size={18} />
-          {loading ? "Saving..." : "Save Settings"}
-        </button>
+        {/* SAVE BUTTON */}
+        <div className="flex justify-end">
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="px-10 py-3 flex items-center gap-2 bg-[#6869AC] text-white rounded-xl disabled:opacity-50"
+          >
+            <Save size={18} />
+            {loading ? "Saving..." : "Save Settings"}
+          </button>
         </div>
+      </div>
 
-        <p className="text-xs text-gray-500 text-center">
-          Your API credentials are stored securely. Never share your secret keys publicly.
-        </p>
+      {/* LIST PAYMENT METHODS */}
+      <div className="mt-10 bg-white rounded-xl shadow-sm p-6">
+        <h2 className="text-lg font-semibold mb-4">
+          Added Payment Methods
+        </h2>
+
+        {paymentMethods.length === 0 ? (
+          <p className="text-gray-500 text-sm">
+            No payment methods added yet.
+          </p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-gray-50">
+                <th className="text-left py-3 px-2">Gateway</th>
+                <th>Status</th>
+                <th>Key ID</th>
+                <th>Last Updated</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {paymentMethods.map((item) => (
+                <tr
+                  key={item.paymentSettingId}
+                  className="border-b last:border-none"
+                >
+                  <td className="px-2 py-3 font-medium">
+                    Razorpay
+                  </td>
+
+                  <td className="text-center">
+                    {item.isRazorpayEnabled ? (
+                      <span className="text-green-600 font-semibold">
+                        Enabled
+                      </span>
+                    ) : (
+                      <span className="text-red-600 font-semibold">
+                        Disabled
+                      </span>
+                    )}
+                  </td>
+
+                  <td className="text-gray-700 text-center">
+                    {item.razorpayKeyId.slice(0, 6)}••••
+                  </td>
+
+                  <td className="text-gray-500 text-center">
+                    {new Date(item.updatedAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
