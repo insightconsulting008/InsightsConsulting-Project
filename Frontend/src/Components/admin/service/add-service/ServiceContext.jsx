@@ -27,7 +27,7 @@ export const ServiceProvider = ({ children }) => {
     description: '',
     individualPrice: '',
     offerPrice: '',
-    employeeId: 'cmjjl771p0005g11eu3q8t2rq',
+    employeeId: 'cmlepw8cr0003h71dg0yb2ybj',
     serviceType: 'ONE_TIME',
     frequency: '',
     duration: '',

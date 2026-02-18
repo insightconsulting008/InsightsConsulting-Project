@@ -21,7 +21,8 @@ import OrderManagement from "./Components/admin/order-management/OrderManagement
 import ViewOrder from "./Components/admin/order-management/ViewOrder";
 
 
-import StaffMyService from "./Components/staff/my-service/MyService";
+import StaffMyService from "./Components/staff/my-service/StaffMyService";
+import StaffViewDetails from "./Components/staff/my-service/StaffViewDetails";
 /* ===========================
    Navbar Controller Component
 =========================== */
@@ -81,6 +82,7 @@ const App = () => {
         {/* Staff */}
         <Route path="/staff/dashboard" element={<StaffDashboard />} />
         <Route path="/staff/my-services" element={<StaffMyService />} />
+        <Route path="/staff/service/:applicationId" element={<StaffViewDetails />} />
 
         {/* User */}
         <Route path="/user/dashboard" element={<UserDashboard />} />
