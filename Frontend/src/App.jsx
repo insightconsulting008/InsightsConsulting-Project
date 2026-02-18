@@ -23,6 +23,11 @@ import ViewOrder from "./Components/admin/order-management/ViewOrder";
 
 
 import StaffMyService from "./Components/staff/my-service/MyService";
+import Nav from "./LandingPage/Nav";
+import Blog from "./LandingPage/Blog";
+import Blogdesc from "./LandingPage/Blogdesc";
+import Addblog from "./LandingPage/Addblog";
+import Home from "./LandingPage/Home";
 
 const NavbarController = ({ setRefreshDepartmentsTrigger }) => {
   const location = useLocation();
@@ -58,13 +63,17 @@ const App = () => {
 
   return (
     <BrowserRouter>
+
+    <Nav/>
+    <Home/>
+    
       {/* ✅ Combined Role Navbar */}
       <NavbarController
         setRefreshDepartmentsTrigger={setRefreshDepartmentsTrigger}
       />
 
       <Routes>
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
 
         {/* Admin */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -86,6 +95,12 @@ const App = () => {
         <Route path="/user/dashboard" element={<UserDashboard />} />
         <Route path="/user/service-hub" element={<GetService />} />
         <Route path="/my-services" element={<MyService />} />
+
+
+      <Route path="/resource" element={<Blog />} />
+<Route path="/resource/:slug" element={<Blogdesc />} />
+<Route path="/add-blog" element={<Addblog />} />
+
       </Routes>
     </BrowserRouter>
   );
