@@ -17,7 +17,7 @@
     "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-query-persist-client": "^5.90.14",
     "axios": "^1.13.2",
-    "framer-motion": "^12.23.25",
+    "framer-motion": "^12.34.2",
     "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.555.0",

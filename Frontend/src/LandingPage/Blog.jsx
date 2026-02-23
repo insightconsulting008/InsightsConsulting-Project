@@ -89,19 +89,19 @@ export default function Blog() {
       {blogs.map((blog) => (
         <div
           key={blog.blogId}
-          className="bg-white rounded-xl shadow-md p-4 overflow-hidden hover:shadow-lg transition"
+          className="bg-white  shadow-md p-4 overflow-hidden hover:shadow-lg transition"
         >
           {/* Image */}
           <img
-            src={blog.coverImage}
+            src={blog.thumbnail}
             alt={blog.title}
-            className="h-56 w-full rounded-2xl object-cover"
+            className="h-56 w-full  object-cover"
           />
 
           {/* Content */}
           <div className="p-5">
             <span className="text-xs text-red-500 font-medium">
-              {blog.meta?.category}
+              {blog.category || ""}
             </span>
 
             <h3 className="text-lg font-semibold text-gray-800 mt-2 flex items-start justify-between gap-2">
@@ -109,14 +109,14 @@ export default function Blog() {
 <FiArrowUpRight
   className="text-gray-500 mt-1 cursor-pointer"
   onClick={(e) => {
-    e.stopPropagation(); // prevents card click conflicts
+    e.stopPropagation();
     navigate(`/resource/${blog.slug}`);
   }}
 />
             </h3>
 
             <p className="text-sm text-gray-500 mt-2 line-clamp-2">
-              {blog.description}
+              {blog.description || ""}
             </p>
 
             {/* Author */}

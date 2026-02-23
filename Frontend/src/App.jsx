@@ -21,38 +21,39 @@ import AddBundleService from "./Components/admin/service/add-service/AddBundleSe
 import OrderManagement from "./Components/admin/order-management/OrderManagement";
 import ViewOrder from "./Components/admin/order-management/ViewOrder";
 
+import StaffMyService from "./Components/staff/my-service/StaffMyService";
+import StaffViewDetails from "./Components/staff/my-service/StaffViewDetails";
 
-import StaffMyService from "./Components/staff/my-service/MyService";
 import Nav from "./LandingPage/Nav";
 import Blog from "./LandingPage/Blog";
 import Blogdesc from "./LandingPage/Blogdesc";
 import Addblog from "./LandingPage/Addblog";
 import Home from "./LandingPage/Home";
+import ServiceInfo from "./LandingPage/ServiceInfo";
+import Contact from "./LandingPage/Contact";
+import About from "./LandingPage/Company";
+import Servicehub from "./LandingPage/Servicehub";
+import Footer from "./LandingPage/Footer";
 
 const NavbarController = ({ setRefreshDepartmentsTrigger }) => {
   const location = useLocation();
   const role = sessionStorage.getItem("role");
 
-  // ❌ Hide navbar on login page
-  if (location.pathname === "/") return null;
 
-  // ❌ If role not found (not logged in)
-  if (!role) return null;
+  if (location.pathname === "/login") return null;
 
-  // ✅ Role-based navbar
+  
+  if (!role) return <Nav /> ;
+
+  // ✅ Role based navbars
   if (role === "ADMIN") {
     return (
       <AdminNav setRefreshDepartmentsTrigger={setRefreshDepartmentsTrigger} />
     );
   }
 
-  if (role === "STAFF") {
-    return <StaffNav />;
-  }
-
-  if (role === "USER") {
-    return <UserNav />;
-  }
+  if (role === "STAFF") return <StaffNav />;
+  if (role === "USER") return <UserNav />;
 
   return null;
 };
@@ -63,16 +64,24 @@ const App = () => {
 
   return (
     <BrowserRouter>
-
-    <Nav/>
-    <Home/>
-    
-      {/* ✅ Combined Role Navbar */}
+      {/* Role based nav */}
       <NavbarController
         setRefreshDepartmentsTrigger={setRefreshDepartmentsTrigger}
       />
 
       <Routes>
+        {/* Landing Page */}
+        <Route
+          path="/"
+          element={
+            <>
+            
+              <Home />
+            </>
+          }
+        />
+
+        {/* Auth */}
         <Route path="/login" element={<Login />} />
 
         {/* Admin */}
@@ -90,18 +99,27 @@ const App = () => {
         {/* Staff */}
         <Route path="/staff/dashboard" element={<StaffDashboard />} />
         <Route path="/staff/my-services" element={<StaffMyService />} />
+        <Route
+          path="/staff/service/:applicationId"
+          element={<StaffViewDetails />}
+        />
 
         {/* User */}
         <Route path="/user/dashboard" element={<UserDashboard />} />
         <Route path="/user/service-hub" element={<GetService />} />
         <Route path="/my-services" element={<MyService />} />
 
-
-      <Route path="/resource" element={<Blog />} />
-<Route path="/resource/:slug" element={<Blogdesc />} />
-<Route path="/add-blog" element={<Addblog />} />
-
+        {/* landing */}
+        <Route path="/resource" element={<Blog />} />
+        <Route path="/resource/:slug" element={<Blogdesc />} />
+        <Route path="/add-blog" element={<Addblog />} />
+        <Route path="/services/:categoryId"element={<ServiceInfo />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/company" element={<About />} />
+        <Route path="/servicehub" element={<Servicehub />} />
+       
       </Routes>
+      <Footer />;
     </BrowserRouter>
   );
 };
