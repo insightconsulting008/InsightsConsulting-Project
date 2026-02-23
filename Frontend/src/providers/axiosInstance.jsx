@@ -1,20 +1,36 @@
-import axios from 'axios'
+import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: 'https://insightsconsult-backend.onrender.com',
-  timeout: 30 * 1000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
+  baseURL: "https://insightsconsult-backend.onrender.com",
+  withCredentials: true,
+});
 
-// Optional: response interceptor
+axiosInstance.interceptors.request.use((config) => {
+  const token = sessionStorage.getItem("accessToken");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error('API Error:', error?.response?.data || error.message)
-    return Promise.reject(error)
-  }
-)
+  (res) => res,
+  async (err) => {
+    const original = err.config;
+    if ((err.response?.status === 401 || err.response?.status === 403) && !original._retry) {
+      original._retry = true;
 
-export default axiosInstance
+      try {
+        const res = await axios.post("https://insightsconsult-backend.onrender.com/auth/refresh", {}, { withCredentials: true });
+        const newToken = res.data.data.accessToken;
+        sessionStorage.setItem("accessToken", newToken);
+        original.headers.Authorization = `Bearer ${newToken}`;
+        return axiosInstance(original);
+      } catch {
+        sessionStorage.removeItem("accessToken");
+        window.location.href = "/";
+      }
+    }
+    return Promise.reject(err);
+  }
+);
+
+export default axiosInstance;

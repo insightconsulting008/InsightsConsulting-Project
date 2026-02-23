@@ -1015,6 +1015,7 @@ export default function GetServive() {
               Manage services, categories, and export data as PDF.
             </p>
           </div>
+          <div>
           <button
             onClick={() => navigate('/add-service')}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white shadow-sm hover:shadow-md transition-shadow"
@@ -1023,6 +1024,7 @@ export default function GetServive() {
             <Plus className="w-5 h-5" />
             Onboard New Service
           </button>
+          </div>
         </div>
 
         <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
@@ -1446,3 +1448,4 @@ export default function GetServive() {
     </div>
   );
 }
+

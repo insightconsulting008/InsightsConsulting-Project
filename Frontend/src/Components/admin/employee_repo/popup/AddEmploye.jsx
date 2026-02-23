@@ -1,8 +1,10 @@
 // EmployeeModal.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { Plus, Users, X, Upload, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { Plus, Users, X, Upload, ChevronDown, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { FaUsers } from 'react-icons/fa';
+import axiosInstance from '@src/providers/axiosInstance';
+import Cropper from 'react-easy-crop';
 
 /* ErrorPopup (kept UI from your original) */
 const ErrorPopup = ({ isOpen, onClose, errorMessage }) => {
@@ -110,7 +112,6 @@ const EmployeeModal = ({
   initialData = null,
   onEmployeeAdded,
   onEmployeeUpdated,
-  // new optional props for department API pagination
   departmentPage = 1,
   departmentLimit = 10
 }) => {
@@ -124,11 +125,11 @@ const EmployeeModal = ({
     mobile: '',
     designation: '',
     photoUrl: '',
-    password: ''
+    password: '',
+    photoFile: null
   };
 
   const [formData, setFormData] = useState(emptyForm);
-
   const [departments, setDepartments] = useState([]);
   const [totalDepartments, setTotalDepartments] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -138,11 +139,21 @@ const EmployeeModal = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [successData, setSuccessData] = useState(null);
-  const [successMode, setSuccessMode] = useState('add'); // 'add' or 'update'
+  const [successMode, setSuccessMode] = useState('add');
   const containerRef = useRef(null);
 
-  // NEW: show/hide password state
+  // Image cropper states
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [originalImage, setOriginalImage] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [cropLoading, setCropLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Image size constants
+  const IMAGE_SIZE = { width: 200, height: 200 };
+  const aspectRatio = IMAGE_SIZE.width / IMAGE_SIZE.height;
 
   // Normalize department list from API (paginated)
   async function fetchDepartments(page = departmentPage, limit = departmentLimit) {
@@ -152,11 +163,6 @@ const EmployeeModal = ({
       const res = await axios.get(url);
       const json = res.data;
 
-      // Typical shapes:
-      // 1) { data: [ ... ], meta: { total: X, page: Y } }
-      // 2) { departments: [ ... ], total: X }
-      // 3) [ ... ] (array directly)
-      // 4) { data: { data: [ ... ] } (nested)
       let raw = [];
       if (Array.isArray(json)) {
         raw = json;
@@ -167,7 +173,6 @@ const EmployeeModal = ({
       } else if (Array.isArray(json?.data?.data)) {
         raw = json.data.data;
       } else {
-        // fallback: try to find the first array field
         const arrayField = Object.values(json).find(v => Array.isArray(v));
         if (Array.isArray(arrayField)) raw = arrayField;
       }
@@ -181,7 +186,6 @@ const EmployeeModal = ({
 
       setDepartments(normalized);
 
-      // try to set totals if present (meta or total)
       const total =
         json?.meta?.total ??
         json?.total ??
@@ -223,7 +227,8 @@ const EmployeeModal = ({
         mobile: initialData.mobileNumber ?? initialData.mobile ?? initialData.phone ?? '',
         designation: initialData.designation ?? '',
         photoUrl: initialData.photoUrl ?? '',
-        password: ''
+        password: '',
+        photoFile: null
       });
       setShowError(false);
       setErrorMessage('');
@@ -251,11 +256,129 @@ const EmployeeModal = ({
   const getSelectedDepartment = () => departments.find(d => d.id === formData.department) ?? null;
   const handleSelect = (id) => { setFormData(prev => ({ ...prev, department: id })); setOpenDropdown(false); };
 
-  // API helpers
-  async function postEmployee(payload) {
+  // ==================== IMAGE CROPPER FUNCTIONS ====================
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      setErrorMessage('Please select a valid image file (JPEG, JPG, or PNG)');
+      setShowError(true);
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Image size should be less than 5MB');
+      setShowError(true);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadstart = () => {
+      setCropLoading(true);
+    };
+    reader.onloadend = () => {
+      setOriginalImage(reader.result);
+      setShowCropModal(true);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCropLoading(false);
+    };
+    reader.onerror = () => {
+      setErrorMessage('Error reading image file');
+      setCropLoading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const createImage = (url) =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.addEventListener('load', () => resolve(image));
+      image.addEventListener('error', (error) => reject(error));
+      image.setAttribute('crossOrigin', 'anonymous');
+      image.src = url;
+    });
+
+  const getCroppedImg = async (imageSrc, pixelCrop) => {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = IMAGE_SIZE.width;
+    canvas.height = IMAGE_SIZE.height;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      IMAGE_SIZE.width,
+      IMAGE_SIZE.height
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/jpeg', 0.95);
+    });
+  };
+
+  const applyCrop = async () => {
     try {
-      const res = await axios.post('https://insightsconsult-backend.onrender.com/employee', payload, {
-        headers: { 'Content-Type': 'application/json' }
+      if (!originalImage || !croppedAreaPixels) return;
+
+      setCropLoading(true);
+      const croppedBlob = await getCroppedImg(originalImage, croppedAreaPixels);
+      const croppedFile = new File([croppedBlob], `employee-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      
+      // Create a temporary object URL for preview only
+      const tempUrl = URL.createObjectURL(croppedBlob);
+      
+      setFormData(prev => ({
+        ...prev,
+        photoUrl: tempUrl, // Temporary blob URL for preview
+        photoFile: croppedFile
+      }));
+      
+      setShowCropModal(false);
+    } catch (error) {
+      console.error('Error cropping image:', error);
+      setErrorMessage('Error cropping image. Please try again.');
+      setShowError(true);
+    } finally {
+      setCropLoading(false);
+    }
+  };
+
+  const removePhoto = () => {
+    if (formData.photoUrl && formData.photoUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(formData.photoUrl);
+    }
+    setFormData(prev => ({
+      ...prev,
+      photoUrl: '',
+      photoFile: null
+    }));
+  };
+
+  // API helpers - UPDATED to use FormData
+  async function postEmployee(formDataPayload) {
+    try {
+      const res = await axiosInstance.post('/employee', formDataPayload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
       return { ok: true, status: res.status, body: res.data };
     } catch (err) {
@@ -264,10 +387,12 @@ const EmployeeModal = ({
     }
   }
 
-  async function putEmployee(id, payload) {
+  async function putEmployee(id, formDataPayload) {
     try {
-      const res = await axios.put(`https://insightsconsult-backend.onrender.com/employee/${id}`, payload, {
-        headers: { 'Content-Type': 'application/json' }
+      const res = await axiosInstance.put(`/employee/${id}`, formDataPayload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
       return { ok: true, status: res.status, body: res.data };
     } catch (err) {
@@ -287,6 +412,7 @@ const EmployeeModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validateRequired()) return;
 
     setSubmitting(true);
@@ -294,7 +420,13 @@ const EmployeeModal = ({
     setShowError(false);
 
     const selected = getSelectedDepartment();
-    const departmentId = selected?.raw?.departmentId ?? selected?.raw?._id ?? selected?.id ?? null;
+
+    const departmentId =
+      selected?.raw?.departmentId ??
+      selected?.raw?._id ??
+      selected?.id ??
+      null;
+
     if (!departmentId) {
       setErrorMessage('Please select a valid department');
       setShowError(true);
@@ -302,59 +434,104 @@ const EmployeeModal = ({
       return;
     }
 
-    const payload = {
-      name: formData.name,
-      email: formData.email,
-      mobileNumber: formData.mobile,
-      designation: formData.designation,
-      status: (formData.status ?? 'Active').toUpperCase(),
-      photoUrl: formData.photoUrl || '',
-      departmentId,
-      role: (formData.role ?? 'Staff').toUpperCase(),
-      ...(formData.employeeId ? { employeeId: formData.employeeId } : {})
-    };
+    try {
+      // Create FormData object to send all data including file
+      const formDataPayload = new FormData();
 
-    if (!initialData) {
-      if (!formData.password) {
+      // Add text fields
+      formDataPayload.append('name', formData.name);
+      formDataPayload.append('email', formData.email);
+      formDataPayload.append('mobileNumber', formData.mobile);
+      formDataPayload.append('designation', formData.designation);
+      formDataPayload.append('departmentId', departmentId);
+      formDataPayload.append('role', (formData.role ?? 'Staff').toUpperCase());
+      formDataPayload.append('status', (formData.status ?? 'Active').toUpperCase());
+
+      // Add optional employee ID if provided
+      if (formData.employeeId) {
+        formDataPayload.append('employeeId', formData.employeeId);
+      }
+
+      // Add password if provided
+      if (formData.password) {
+        formDataPayload.append('password', formData.password);
+      } else if (!initialData) {
+        // Password required for new employees
         setErrorMessage('Password is required for new employees');
         setShowError(true);
         setSubmitting(false);
         return;
       }
-      payload.password = formData.password;
-    } else {
-      if (formData.password) payload.password = formData.password;
-    }
 
-    try {
+      // Add photo file if exists
+      if (formData.photoFile) {
+        formDataPayload.append('photoUrl', formData.photoFile);
+      } else if (formData.photoUrl && !formData.photoUrl.startsWith('blob:')) {
+        // If editing and photoUrl is already a real URL (not blob), send it as string
+        formDataPayload.append('photoUrl', formData.photoUrl);
+      }
+
+      // // Log what we're sending (for debugging)
+      // console.log('FormData being sent:');
+      // for (let [key, value] of formDataPayload.entries()) {
+      //   console.log(key, value);
+      // }
+
+      // UPDATE CASE
       if (initialData && (initialData._id || initialData.employeeId)) {
         const idToUse = initialData._id ?? initialData.employeeId;
-        const res = await putEmployee(idToUse, payload);
+        const res = await putEmployee(idToUse, formDataPayload);
+
         if (res.ok) {
-          // show success popup in update mode
           setSuccessMode('update');
-          setSuccessData({ employee: { ...formData }, department: selected });
+          setSuccessData({ 
+            employee: { 
+              ...formData, 
+              mobileNumber: formData.mobile, // Convert mobile to mobileNumber for display
+              departmentId 
+            }, 
+            department: selected 
+          });
           setShowSuccess(true);
           return;
         } else {
-          setErrorMessage(res.body?.message ?? res.body?.error ?? `Failed to update employee (status ${res.status})`);
+          setErrorMessage(
+            res.body?.message ??
+            res.body?.error ??
+            `Failed to update employee (status ${res.status})`
+          );
           setShowError(true);
         }
-      } else {
-        const res = await postEmployee(payload);
+      }
+
+      // CREATE CASE
+      else {
+        const res = await postEmployee(formDataPayload);
+
         if (res.ok) {
           setSuccessMode('add');
-          setSuccessData({ employee: { ...formData }, department: selected });
+          setSuccessData({ 
+            employee: { 
+              ...formData, 
+              mobileNumber: formData.mobile, // Convert mobile to mobileNumber for display
+              departmentId 
+            }, 
+            department: selected 
+          });
           setShowSuccess(true);
           return;
         } else {
-          setErrorMessage(res.body?.message ?? res.body?.error ?? `Failed to add employee (status ${res.status})`);
+          setErrorMessage(
+            res.body?.message ??
+            res.body?.error ??
+            `Failed to add employee (status ${res.status})`
+          );
           setShowError(true);
         }
       }
     } catch (err) {
       console.error('submit error', err);
-      setErrorMessage('Network error. Please try again.');
+      setErrorMessage(err.message || 'Network error. Please try again.');
       setShowError(true);
     } finally {
       setSubmitting(false);
@@ -362,7 +539,11 @@ const EmployeeModal = ({
   };
 
   function handleSuccessClose() {
-    // call callbacks after closing success popup, then close modal
+    // Clean up blob URLs
+    if (formData.photoUrl && formData.photoUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(formData.photoUrl);
+    }
+    
     if (successMode === 'add') {
       if (onEmployeeAdded) onEmployeeAdded(successData?.employee);
     } else {
@@ -404,18 +585,54 @@ const EmployeeModal = ({
           {renderHeader()}
 
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            {/* Photo Upload Section with Cropper */}
             <div className="flex flex-col items-center">
-              <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+              <div className="relative w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mb-3 o">
                 {formData.photoUrl ? (
-                  <img src={formData.photoUrl} alt={formData.name} className="w-full h-full object-cover rounded-full" />
+                  <>
+                    <img src={formData.photoUrl} alt={formData.name} className="w-full h-full object-cover rounded-full" />
+                    <button
+                      type="button"
+                      onClick={removePhoto}
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      disabled={cropLoading || submitting}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </>
                 ) : (
                   <Users className="w-10 h-10 text-gray-400" />
                 )}
               </div>
-              <button type="button" className="flex items-center gap-2 btn-primary text-white rounded-lg text-sm hover:from-indigo-700 hover:to-indigo-800 transition-all">
-                <Upload className="w-4 h-4" />
-                Upload Photo
-              </button>
+              
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="employee-photo-upload"
+                disabled={cropLoading || submitting}
+              />
+              
+              <label 
+                htmlFor="employee-photo-upload"
+                className={`flex items-center gap-2 btn-primary text-white rounded-lg text-sm hover:from-indigo-700 hover:to-indigo-800 transition-all cursor-pointer px-4 py-2 ${(cropLoading || submitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {cropLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Upload Photo
+                  </>
+                )}
+              </label>
+              <p className="text-xs text-gray-500 mt-2">
+                Image will be cropped to {IMAGE_SIZE.width}×{IMAGE_SIZE.height}px
+              </p>
             </div>
 
             {/* Department select */}
@@ -534,7 +751,6 @@ const EmployeeModal = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Password {initialData ? <span className="text-xs text-gray-500"> (leave blank to keep current)</span> : <span className="text-red-500">*</span>}</label>
 
-              {/* Password input with show/hide toggle — functionality unchanged */}
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -559,14 +775,96 @@ const EmployeeModal = ({
             )}
 
             <div className="flex gap-3 pt-4">
-              <button type="submit" disabled={submitting} className="flex-1 btn-primary text-white rounded-lg font-medium disabled:opacity-60">
+              <button type="submit" disabled={submitting || cropLoading} className="flex-1 btn-primary text-white rounded-lg font-medium disabled:opacity-60">
                 {submitting ? (initialData ? 'Updating...' : 'Adding...') : (initialData ? 'Update Employee' : 'Add Employee')}
               </button>
-              <button type="button" onClick={onClose} disabled={submitting} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-60">Cancel</button>
+              <button type="button" onClick={onClose} disabled={submitting || cropLoading} className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-60">Cancel</button>
             </div>
           </form>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {showCropModal && (
+        <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Crop Employee Photo</h2>
+                <button
+                  onClick={() => setShowCropModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  disabled={cropLoading}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Crop your image (Aspect Ratio: {IMAGE_SIZE.width}×{IMAGE_SIZE.height}px)
+                </label>
+              </div>
+
+              <div className="relative mb-6 bg-gray-100 rounded-lg overflow-hidden"
+                style={{ height: '300px', width: '100%' }}>
+                <Cropper
+                  image={originalImage}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={aspectRatio}
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                  cropShape="rect"
+                  showGrid={true}
+                  objectFit="contain"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Zoom: {Math.round(zoom * 100)}%
+                </label>
+                <input
+                  type="range"
+                  value={zoom}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  disabled={cropLoading}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowCropModal(false)}
+                  className="px-5 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  disabled={cropLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={applyCrop}
+                  disabled={cropLoading}
+                  className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors disabled:bg-indigo-400 flex items-center gap-2"
+                >
+                  {cropLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Cropping...
+                    </>
+                  ) : (
+                    'Crop & Save'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Success & Error popups */}
       {showSuccess && successData && (

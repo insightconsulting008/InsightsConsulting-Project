@@ -11,7 +11,10 @@ export default function DatasetSetup() {
     newCustomField,
     setNewCustomField,
     masterFields,
-    setError
+    setError,
+    goToNextStep,
+    goToPreviousStep,
+    currentStep
   } = useService();
 
   const [showMasterFieldsModal, setShowMasterFieldsModal] = useState(false);
@@ -545,6 +548,22 @@ export default function DatasetSetup() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-6 border-t border-gray-200">
+        <button
+          onClick={goToPreviousStep}
+          className="px-6 py-2 rounded-lg font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+        >
+          Previous
+        </button>
+        <button
+          onClick={goToNextStep}
+          className="px-6 py-2 rounded-lg font-medium bg-[#6869AC] text-white hover:opacity-90"
+        >
+          Next
+        </button>
       </div>
 
       {/* Master Fields Modal */}

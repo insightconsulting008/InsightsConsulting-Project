@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
+
 @layer components {
   .btn-primary {
     @apply bg-[#6869AC] text-white px-4 py-2;
@@ -21,4 +26,7 @@
   --color-textbright: #FFFFFF;
   --color-bright: #FFFFFF;
   --color-dark: #000000;
+  --color-red: #D11C16;
+  --color-yellow: #F0B604;
+ 
 }
