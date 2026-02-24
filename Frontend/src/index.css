@@ -4,29 +4,97 @@ html {
   scroll-behavior: smooth;
 }
 
-
 @layer components {
+  /* ── Button System ── */
+  /* btn-primary kept backward-compatible (used in admin components) */
   .btn-primary {
-    @apply bg-[#6869AC] text-white px-4 py-2;
+    @apply bg-primary text-textbright px-4 py-2 font-medium
+           transition-all duration-200 hover:opacity-90;
   }
+  /* btn-secondary kept backward-compatible */
   .btn-secondary {
-    @apply border-[#6869AC] bg-[#F0F0F7] border text-[#4C4C4C] px-4 py-2;
+    @apply border border-primary/30 bg-secondary text-textdark px-4 py-2 font-medium
+           transition-all duration-200 hover:bg-primary/10;
   }
-  .border{
-    @apply border-2 border-[#E5EFFF]
+  /* New landing-page CTA button */
+  .btn-cta {
+    @apply bg-red text-textbright px-6 py-3 rounded-xl font-semibold
+           transition-all duration-200 hover:opacity-90 hover:shadow-lg
+           active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer;
   }
-  
+  /* New outline button */
+  .btn-outline {
+    @apply border border-border bg-bright text-textdark px-6 py-3 rounded-xl font-semibold
+           transition-all duration-200 hover:border-primary/50 hover:text-primary
+           active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer;
+  }
+  /* Ghost button */
+  .btn-ghost {
+    @apply text-textdark px-6 py-3 rounded-xl font-semibold
+           transition-all duration-200 hover:bg-secondary
+           active:scale-[0.98] inline-flex items-center gap-2 cursor-pointer;
+  }
+
+  /* ── Typography System ── */
+  .section-label {
+    @apply text-[11px] font-bold tracking-[0.2em] uppercase;
+  }
+  .section-heading {
+    @apply text-3xl sm:text-4xl lg:text-5xl font-bold text-textdark leading-tight tracking-tight;
+  }
+  .section-subtext {
+    @apply text-textlight leading-relaxed;
+  }
+
+  /* ── Card System ── */
+  .card {
+    @apply bg-bright rounded-2xl border border-border/70 p-6
+           hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20
+           transition-all duration-300;
+  }
+  .card-dark {
+    @apply bg-darkcard rounded-2xl border border-white/5 p-6
+           hover:border-white/10 transition-all duration-300;
+  }
+
+  /* ── Section Container ── */
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 md:px-6 lg:px-8;
+  }
+
+  /* Legacy — kept to avoid breaking existing markup */
+  .border-themed {
+    @apply border-2 border-border;
+  }
 }
 
 @theme {
+  /* ── Brand Colors ── */
   --color-primary: #6869AC;
   --color-secondary: #F0F0F7;
+  --color-red: #D11C16;
+  --color-yellow: #F0B604;
+
+  /* ── Text Colors ── */
   --color-textdark: #170F49;
   --color-textlight: #888888;
   --color-textbright: #FFFFFF;
+
+  /* ── Surface Colors ── */
   --color-bright: #FFFFFF;
   --color-dark: #000000;
-  --color-red: #D11C16;
-  --color-yellow: #F0B604;
- 
+  --color-surface: #F8F9FB;
+  --color-darksurface: #05070C;
+  --color-darkcard: #0B0F17;
+  --color-warmwhite: #FFFBF2;
+  --color-coolsurface: #EEF0F2;
+
+  /* ── Border ── */
+  --color-border: #E5EFFF;
+
+  /* ── Bento Card Accents ── */
+  --color-greensoft: #E6F3DA;
+  --color-bluesoft: #E9EEF2;
+  --color-yellowsoft: #FFF6D7;
+  --color-pinksoft: #F3EBED;
 }
