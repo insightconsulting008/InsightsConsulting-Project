@@ -63,7 +63,7 @@ export default function ChecklistSetup() {
         </div>
         <button
           onClick={addTrackStep}
-          className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm bg-white text-[#6869AC] border border-[#6869AC] hover:bg-gray-50"
+          className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm bg-white text-red border border-red hover:bg-gray-50"
         >
           <Plus className="w-4 h-4 mr-1" />
           Add Step
@@ -95,7 +95,7 @@ export default function ChecklistSetup() {
                     className={`w-full px-4 py-2 border rounded-lg text-sm font-medium focus:outline-none focus:ring-1 ${
                       stepErrors[`step_${idx}_title`] 
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]'
+                        : 'border-gray-300 focus:border-red focus:ring-red'
                     }`}
                   />
                   {stepErrors[`step_${idx}_title`] && (
@@ -116,7 +116,7 @@ export default function ChecklistSetup() {
                     className={`w-full px-4 py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-1 ${
                       stepErrors[`step_${idx}_description`] 
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]'
+                        : 'border-gray-300 focus:border-red focus:ring-red'
                     }`}
                     rows={2}
                   />
@@ -133,7 +133,7 @@ export default function ChecklistSetup() {
                       }
                       setEditingStep(null);
                     }}
-                    className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm text-white hover:opacity-90 bg-[#6869AC]"
+                    className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-sm text-white hover:opacity-90 bg-red"
                   >
                     <Check className="w-4 h-4 mr-1" />
                     Save
@@ -149,7 +149,7 @@ export default function ChecklistSetup() {
             ) : (
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <div
-                  className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-white font-semibold flex-shrink-0 bg-[#6869AC]"
+                  className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-white font-semibold flex-shrink-0 bg-red"
                 >
                   {step.order}
                 </div>
@@ -211,7 +211,7 @@ export default function ChecklistSetup() {
         </button>
         <button
           onClick={goToNextStep}
-          className="px-6 py-2 rounded-lg font-medium bg-[#6869AC] text-white hover:opacity-90"
+          className="px-6 py-2 rounded-lg font-medium bg-red text-white hover:opacity-90"
         >
           Next
         </button>

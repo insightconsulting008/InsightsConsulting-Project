@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 // ─── STAFF ID (replace with auth context) ──────────────────────────────────────
-const STAFF_ID = 'cmleq079l0005h71dkvbl3r6m';
+const STAFF_ID = 'cmleq58jn0009h71d0o4xaer6';
 
 // ─── DOC STATUS CONFIG ─────────────────────────────────────────────────────────
 const DOC_STATUS_CONFIG = {
@@ -108,7 +108,7 @@ const RequestDocumentModal = ({
   onClose,
   onSuccess,
   applicationTrackStepId = null,
-  servicePeriodId = null,
+  periodStepId = null, // Changed from servicePeriodId to periodStepId
   stepTitle = '',
 }) => {
   // ── Flow selection: REQUESTED or ISSUED
@@ -156,7 +156,7 @@ const RequestDocumentModal = ({
       setError('Please enter a document type.');
       return;
     }
-    if (!applicationTrackStepId && !servicePeriodId) {
+    if (!applicationTrackStepId && !periodStepId) { // Changed validation
       setError('Document must be associated with a step or service period.');
       return;
     }
@@ -189,7 +189,7 @@ const RequestDocumentModal = ({
           remark: remark.trim() || undefined,
         };
         if (applicationTrackStepId) requestData.applicationTrackStepId = applicationTrackStepId;
-        else if (servicePeriodId)   requestData.servicePeriodId         = servicePeriodId;
+        else if (periodStepId) requestData.periodStepId = periodStepId; // Changed to periodStepId
 
         const res = await axiosInstance.post('/staff/document', requestData);
         if (!res.data.success) throw new Error(res.data.message || 'Failed to create request.');
@@ -204,7 +204,7 @@ const RequestDocumentModal = ({
           formData.append('inputType',    'FILE');
           if (remark.trim()) formData.append('remark', remark.trim());
           if (applicationTrackStepId) formData.append('applicationTrackStepId', applicationTrackStepId);
-          else if (servicePeriodId)   formData.append('servicePeriodId',         servicePeriodId);
+          else if (periodStepId) formData.append('periodStepId', periodStepId); // Changed to periodStepId
           formData.append('file', selectedFile);
 
           const res = await axiosInstance.post('/staff/document', formData, {
@@ -223,7 +223,7 @@ const RequestDocumentModal = ({
             remark:       remark.trim() || undefined,
           };
           if (applicationTrackStepId) requestData.applicationTrackStepId = applicationTrackStepId;
-          else if (servicePeriodId)   requestData.servicePeriodId         = servicePeriodId;
+          else if (periodStepId) requestData.periodStepId = periodStepId; // Changed to periodStepId
 
           const res = await axiosInstance.post('/staff/document', requestData);
           if (!res.data.success) throw new Error(res.data.message || 'Failed to issue document.');
@@ -879,7 +879,7 @@ const DocumentManagementSection = ({ applicationId, onCountChange }) => {
           onClose={() => { setShowRequestModal(false); setSelectedStepForRequest(null); }}
           onSuccess={fetchDocuments}
           applicationTrackStepId={selectedStepForRequest?.applicationTrackStepId}
-          servicePeriodId={selectedStepForRequest?.servicePeriodId}
+          periodStepId={selectedStepForRequest?.periodStepId} // Changed from servicePeriodId to periodStepId
           stepTitle={selectedStepForRequest?.title}
         />
       )}
@@ -1109,9 +1109,15 @@ const TrackStepItem = ({ step, isLast, applicationId, isPeriodStep = false, onOp
 
   const handleRequestDoc = () => {
     if (isPeriodStep) {
-      onOpenDocRequest({ title: step.title, servicePeriodId: step.servicePeriodId }, true);
+      onOpenDocRequest({ 
+        title: step.title, 
+        periodStepId: step.periodStepId // Changed from servicePeriodId to periodStepId
+      }, true);
     } else {
-      onOpenDocRequest({ title: step.title, applicationTrackStepId: step.applicationTrackStepId }, false);
+      onOpenDocRequest({ 
+        title: step.title, 
+        applicationTrackStepId: step.applicationTrackStepId 
+      }, false);
     }
   };
 
@@ -1190,7 +1196,7 @@ const ServicePeriodCard = ({ period, isFirst, applicationId, onOpenDocRequest, o
   const handleRequestDocumentForPeriod = () => {
     onOpenDocRequest({
       title: period.periodLabel,
-      servicePeriodId: period.servicePeriodId,
+      periodStepId: period.servicePeriodId, // Changed from servicePeriodId to periodStepId
       periodLabel: period.periodLabel,
     }, true);
   };
@@ -1246,7 +1252,7 @@ const ServicePeriodCard = ({ period, isFirst, applicationId, onOpenDocRequest, o
                 .map((step, i, arr) => (
                   <TrackStepItem
                     key={step.periodStepId}
-                    step={{ ...step, servicePeriodId: period.servicePeriodId }}
+                    step={{ ...step, periodStepId: step.periodStepId }}
                     isLast={i === arr.length - 1}
                     applicationId={applicationId}
                     isPeriodStep={true}
@@ -1510,17 +1516,17 @@ export default function ViewDetails() {
   };
 
   const handleOpenDocRequest = (stepOrPeriod, isPeriodStep) => {
-    if (stepOrPeriod.servicePeriodId && !stepOrPeriod.applicationTrackStepId) {
+    if (stepOrPeriod.periodStepId && !stepOrPeriod.applicationTrackStepId) {
       setSelectedStepForDocRequest({
         title: stepOrPeriod.title || stepOrPeriod.periodLabel,
-        servicePeriodId: stepOrPeriod.servicePeriodId,
+        periodStepId: stepOrPeriod.periodStepId,
         periodLabel: stepOrPeriod.periodLabel,
       });
     } else {
       if (isPeriodStep) {
         setSelectedStepForDocRequest({
           title: stepOrPeriod.title,
-          servicePeriodId: stepOrPeriod.servicePeriodId,
+          periodStepId: stepOrPeriod.periodStepId,
         });
       } else {
         setSelectedStepForDocRequest({
@@ -1577,7 +1583,7 @@ export default function ViewDetails() {
           onClose={() => { setShowDocRequestModal(false); setSelectedStepForDocRequest(null); }}
           onSuccess={fetchApplicationDetails}
           applicationTrackStepId={selectedStepForDocRequest.applicationTrackStepId}
-          servicePeriodId={selectedStepForDocRequest.servicePeriodId}
+          periodStepId={selectedStepForDocRequest.periodStepId} // Changed from servicePeriodId to periodStepId
           stepTitle={selectedStepForDocRequest.title}
         />
       )}

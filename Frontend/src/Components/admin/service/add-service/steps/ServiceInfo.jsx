@@ -8,6 +8,9 @@ import {
   ChevronDown,
   X,
   Upload,
+  FileText,
+  Type,
+  AlertCircle,
 } from "lucide-react";
 import Cropper from "react-easy-crop";
 
@@ -27,6 +30,8 @@ export default function ServiceInfo() {
     goToPreviousStep,
     currentStep,
     uploadImage,
+    requiredDocuments,
+    setRequiredDocuments,
   } = useService();
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -89,17 +94,19 @@ export default function ServiceInfo() {
           ...prev,
           serviceType: newServiceType,
         };
-        // Clear recurring fields if switching to ONE_TIME
+        // Clear recurring + documents fields if switching to ONE_TIME
         if (newServiceType === "ONE_TIME") {
           updatedInfo.frequency = "";
           updatedInfo.durationUnit = "";
           updatedInfo.duration = "";
+          updatedInfo.documentsRequired = false;
           clearRecurringFieldErrors();
+          setRequiredDocuments([]);
         }
         return updatedInfo;
       });
     },
-    [setBasicInfo, clearRecurringFieldErrors]
+    [setBasicInfo, clearRecurringFieldErrors, setRequiredDocuments]
   );
 
   // Handle service type change in the component
@@ -556,7 +563,7 @@ export default function ServiceInfo() {
                 className={`w-full max-w-md h-64 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer ${
                   stepErrors.photoUrl 
                     ? "border-red-300 bg-red-50" 
-                    : "border-gray-300 hover:border-[#6869AC]"
+                    : "border-gray-300 hover:border-red"
                 }`}
               >
                 <input
@@ -569,7 +576,7 @@ export default function ServiceInfo() {
                 />
                 {uploadingImage ? (
                   <div className="flex flex-col items-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#6869AC]"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red"></div>
                     <p className="mt-2 text-sm text-gray-600">Processing image...</p>
                   </div>
                 ) : (
@@ -609,7 +616,7 @@ export default function ServiceInfo() {
                 className={`w-full px-4 py-2 border rounded-lg appearance-none bg-white pr-10 text-sm focus:outline-none focus:ring-1 ${
                   stepErrors.serviceType
                     ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]"
+                    : "border-gray-300 focus:border-red focus:ring-red"
                 }`}
               >
                 {serviceTypeOptions.map((option) => (
@@ -645,7 +652,7 @@ export default function ServiceInfo() {
                   className={`w-full px-4 py-2 border rounded-lg appearance-none bg-white pr-10 text-sm focus:outline-none focus:ring-1 ${
                     stepErrors.categoryId
                       ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]"
+                      : "border-gray-300 focus:border-red focus:ring-red"
                   }`}
                 >
                   <option value="">Select category</option>
@@ -659,7 +666,7 @@ export default function ServiceInfo() {
               </div>
               <button
                 onClick={() => setShowCategoryModal(true)}
-                className="px-3 py-2 rounded-lg text-white hover:opacity-90 bg-[#6869AC]"
+                className="px-3 py-2 rounded-lg text-white hover:opacity-90 bg-red"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -748,7 +755,7 @@ export default function ServiceInfo() {
                   className={`w-full px-4 py-2 border rounded-lg appearance-none bg-white pr-10 text-sm focus:outline-none focus:ring-1 ${
                     stepErrors.subCategoryId
                       ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]"
+                      : "border-gray-300 focus:border-red focus:ring-red"
                   }`}
                   disabled={!basicInfo.categoryId}
                 >
@@ -764,7 +771,7 @@ export default function ServiceInfo() {
               <button
                 onClick={() => setShowSubcategoryModal(true)}
                 disabled={!basicInfo.categoryId}
-                className="px-3 py-2 rounded-lg text-white hover:opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed bg-[#6869AC]"
+                className="px-3 py-2 rounded-lg text-white hover:opacity-90 disabled:bg-gray-300 disabled:cursor-not-allowed bg-red"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -833,29 +840,210 @@ export default function ServiceInfo() {
             )}
           </div>
 
-          {/* Documents Required */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-gray-800">
-              Documents Required
-            </label>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={basicInfo.documentsRequired || false}
-                onChange={(e) =>
-                  setBasicInfo((prev) => ({
-                    ...prev,
-                    documentsRequired: e.target.checked,
-                  }))
-                }
-                className="w-4 h-4 text-[#6869AC] rounded border-gray-300 focus:ring-[#6869AC]"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                Service requires document upload
-              </span>
+          {/* Documents Required - Only for RECURRING services */}
+          {basicInfo.serviceType === "RECURRING" && (
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-800">
+                Documents Required
+              </label>
+              <label className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 border-gray-200 group">
+                <div className="relative flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={basicInfo.documentsRequired || false}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setBasicInfo((prev) => ({
+                        ...prev,
+                        documentsRequired: checked,
+                      }));
+                      if (!checked) {
+                        setRequiredDocuments([]);
+                      } else if (requiredDocuments.length === 0) {
+                        setRequiredDocuments([{ id: Date.now(), documentName: "", inputType: "file" }]);
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 accent-red cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-800">Service requires document upload</span>
+                  <p className="text-xs text-gray-500 mt-0.5">Clients must submit documents to proceed</p>
+                </div>
+              </label>
             </div>
-          </div>
+          )}
         </div>
+
+        {/* Required Documents List — shown only for RECURRING + documentsRequired */}
+        {basicInfo.serviceType === "RECURRING" && basicInfo.documentsRequired && (
+          <div className="border border-dashed border-red/40 rounded-xl bg-red/5 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-red text-white">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Required Documents</h3>
+                  <p className="text-xs text-gray-500">Define what clients must upload or fill</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setRequiredDocuments((prev) => [
+                    ...prev,
+                    { id: Date.now(), documentName: "", inputType: "file" },
+                  ])
+                }
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red text-white hover:opacity-90 transition-opacity"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Document
+              </button>
+            </div>
+
+            {stepErrors.requiredDocuments && (
+              <div className="mb-3 flex items-center gap-2 bg-red/10 border border-red/30 rounded-lg px-3 py-2">
+                <AlertCircle className="w-4 h-4 text-red flex-shrink-0" />
+                <p className="text-xs text-red font-medium">{stepErrors.requiredDocuments}</p>
+              </div>
+            )}
+
+            {requiredDocuments.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 text-gray-400">
+                <AlertCircle className="w-8 h-8 mb-2 opacity-40" />
+                <p className="text-sm">No documents added yet. Click "Add Document" to start.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {requiredDocuments.map((doc, idx) => (
+                  <div
+                    key={doc.id}
+                    className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm"
+                  >
+                    {/* Index badge */}
+                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-yellow text-gray-900 text-xs font-bold flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+
+                    {/* Document name */}
+                    <div className="flex-1 min-w-0">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Document Name <span className="text-red">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={doc.documentName}
+                        onChange={(e) => {
+                          setRequiredDocuments((prev) =>
+                            prev.map((d) =>
+                              d.id === doc.id ? { ...d, documentName: e.target.value } : d
+                            )
+                          );
+                          // Clear per-doc error on type
+                          if (stepErrors[`doc_${idx}_name`]) {
+                            setStepErrors(prev => { const n = {...prev}; delete n[`doc_${idx}_name`]; return n; });
+                          }
+                        }}
+                        placeholder="e.g. sales_report, aadhar_card"
+                        className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 placeholder-gray-400 ${
+                          stepErrors[`doc_${idx}_name`]
+                            ? "border-red focus:ring-red focus:border-red"
+                            : "border-gray-300 focus:ring-red focus:border-red"
+                        }`}
+                      />
+                      {stepErrors[`doc_${idx}_name`] && (
+                        <p className="mt-1 text-xs text-red">{stepErrors[`doc_${idx}_name`]}</p>
+                      )}
+                    </div>
+
+                    {/* Input type */}
+                    <div className="w-full sm:w-40 flex-shrink-0">
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Input Type
+                      </label>
+                      <div className="flex rounded-lg border border-gray-300 overflow-hidden text-xs font-medium">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setRequiredDocuments((prev) =>
+                              prev.map((d) =>
+                                d.id === doc.id ? { ...d, inputType: "file" } : d
+                              )
+                            )
+                          }
+                          className={`flex-1 flex items-center justify-center gap-1 py-2 transition-colors ${
+                            doc.inputType === "file"
+                              ? "bg-red text-white"
+                              : "bg-white text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Upload className="w-3 h-3" />
+                          File
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setRequiredDocuments((prev) =>
+                              prev.map((d) =>
+                                d.id === doc.id ? { ...d, inputType: "text" } : d
+                              )
+                            )
+                          }
+                          className={`flex-1 flex items-center justify-center gap-1 py-2 border-l border-gray-300 transition-colors ${
+                            doc.inputType === "text"
+                              ? "bg-red text-white"
+                              : "bg-white text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Type className="w-3 h-3" />
+                          Text
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Remove button */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setRequiredDocuments((prev) => prev.filter((d) => d.id !== doc.id))
+                      }
+                      className="flex-shrink-0 p-2 rounded-lg text-red hover:bg-red/10 transition-colors mt-4 sm:mt-0"
+                      title="Remove document"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Preview summary */}
+            {requiredDocuments.some((d) => d.documentName.trim()) && (
+              <div className="mt-4 pt-3 border-t border-red/20">
+                <p className="text-xs font-medium text-gray-600 mb-2">Preview:</p>
+                <div className="flex flex-wrap gap-2">
+                  {requiredDocuments
+                    .filter((d) => d.documentName.trim())
+                    .map((d) => (
+                      <span
+                        key={d.id}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white border border-gray-200 text-gray-700"
+                      >
+                        {d.inputType === "file" ? (
+                          <Upload className="w-3 h-3 text-red" />
+                        ) : (
+                          <Type className="w-3 h-3 text-yellow" />
+                        )}
+                        {d.documentName}
+                      </span>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Recurring Service Fields - Conditionally shown */}
         {basicInfo.serviceType === "RECURRING" && (
@@ -877,7 +1065,7 @@ export default function ServiceInfo() {
                   className={`w-full px-4 py-2 border rounded-lg appearance-none bg-white pr-10 text-sm focus:outline-none focus:ring-1 ${
                     stepErrors.frequency
                       ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]"
+                      : "border-gray-300 focus:border-red focus:ring-red"
                   }`}
                 >
                   <option value="">Select frequency</option>
@@ -913,7 +1101,7 @@ export default function ServiceInfo() {
                   className={`w-full px-4 py-2 border rounded-lg appearance-none bg-white pr-10 text-sm focus:outline-none focus:ring-1 ${
                     stepErrors.durationUnit
                       ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]"
+                      : "border-gray-300 focus:border-red focus:ring-red"
                   }`}
                 >
                   <option value="">Select unit</option>
@@ -951,7 +1139,7 @@ export default function ServiceInfo() {
                 className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 ${
                   stepErrors.duration
                     ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                    : "border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]"
+                    : "border-gray-300 focus:border-red focus:ring-red"
                 }`}
               />
               {stepErrors.duration && (
@@ -980,7 +1168,7 @@ export default function ServiceInfo() {
             className={`w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 ${
               stepErrors.name
                 ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                : "border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]"
+                : "border-gray-300 focus:border-red focus:ring-red"
             }`}
           />
           {stepErrors.name && (
@@ -1004,7 +1192,7 @@ export default function ServiceInfo() {
             className={`w-full px-4 py-2 border rounded-lg h-32 resize-none text-sm focus:outline-none focus:ring-1 ${
               stepErrors.description
                 ? "border-red-300 focus:border-red-500 focus:ring-red-500"
-                : "border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]"
+                : "border-gray-300 focus:border-red focus:ring-red"
             }`}
           />
           {stepErrors.description && (
@@ -1030,7 +1218,7 @@ export default function ServiceInfo() {
         </button>
         <button
           onClick={goToNextStep}
-          className="px-6 py-2 rounded-lg font-medium bg-[#6869AC] text-white hover:opacity-90"
+          className="px-6 py-2 rounded-lg font-medium bg-red text-white hover:opacity-90"
         >
           Next
         </button>
@@ -1121,7 +1309,7 @@ export default function ServiceInfo() {
               <button
                 onClick={handleCropComplete}
                 disabled={uploadingImage}
-                className="flex-1 py-3 rounded-lg text-white text-sm font-medium hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed bg-[#6869AC]"
+                className="flex-1 py-3 rounded-lg text-white text-sm font-medium hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed bg-red"
               >
                 {uploadingImage ? (
                   <span className="flex items-center justify-center">
@@ -1163,12 +1351,12 @@ export default function ServiceInfo() {
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               placeholder="Category name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-sm focus:outline-none focus:border-[#6869AC] focus:ring-1 focus:ring-[#6869AC]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-sm focus:outline-none focus:border-red focus:ring-1 focus:ring-red"
             />
             <div className="flex gap-2">
               <button
                 onClick={handleAddCategory}
-                className="flex-1 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 bg-[#6869AC]"
+                className="flex-1 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 bg-red"
               >
                 Add Category
               </button>
@@ -1212,13 +1400,13 @@ export default function ServiceInfo() {
               value={newSubcategoryName}
               onChange={(e) => setNewSubcategoryName(e.target.value)}
               placeholder="Subcategory name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-sm focus:outline-none focus:border-[#6869AC] focus:ring-1 focus:ring-[#6869AC]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-sm focus:outline-none focus:border-red focus:ring-1 focus:ring-red"
             />
             <div className="flex gap-2">
               <button
                 onClick={handleAddSubcategory}
                 disabled={!basicInfo.categoryId}
-                className="flex-1 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed bg-[#6869AC]"
+                className="flex-1 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed bg-red"
               >
                 Add Subcategory
               </button>
@@ -1265,7 +1453,7 @@ export default function ServiceInfo() {
                         categoryId: e.target.value,
                       }))
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg appearance-none bg-white pr-10 text-sm focus:outline-none focus:border-[#6869AC] focus:ring-1 focus:ring-[#6869AC]"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg appearance-none bg-white pr-10 text-sm focus:outline-none focus:border-red focus:ring-1 focus:ring-red"
                   >
                     <option value="">Select category</option>
                     {categories.map((cat) => (
@@ -1295,7 +1483,7 @@ export default function ServiceInfo() {
                   ? "Category name"
                   : "Subcategory name"
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-sm focus:outline-none focus:border-[#6869AC] focus:ring-1 focus:ring-[#6869AC]"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 text-sm focus:outline-none focus:border-red focus:ring-1 focus:ring-red"
             />
             <div className="flex gap-2">
               <button
@@ -1307,7 +1495,7 @@ export default function ServiceInfo() {
                 disabled={
                   showEditModal === "subcategory" && !basicInfo.categoryId
                 }
-                className="flex-1 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed bg-[#6869AC]"
+                className="flex-1 py-2 rounded-lg text-white text-sm font-medium hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed bg-red"
               >
                 Save Changes
               </button>

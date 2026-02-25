@@ -32,7 +32,7 @@ export const ServiceProvider = ({ children }) => {
     frequency: '',
     duration: '',
     durationUnit: '',
-    documentsRequired: true,
+    documentsRequired: false, // Only applicable for RECURRING services
     isGstApplicable: true,
     gstPercentage: 18,
     finalIndividualPrice: '',
@@ -54,6 +54,9 @@ export const ServiceProvider = ({ children }) => {
     required: false,
     options: [],
   });
+
+  // Required documents (only for RECURRING services)
+  const [requiredDocuments, setRequiredDocuments] = useState([]);
 
   // Track steps
   const [trackSteps, setTrackSteps] = useState([
@@ -146,6 +149,18 @@ export const ServiceProvider = ({ children }) => {
           if (!basicInfo.frequency) errors.frequency = 'Frequency is required';
           if (!basicInfo.duration) errors.duration = 'Duration is required';
           if (!basicInfo.durationUnit) errors.durationUnit = 'Duration unit is required';
+          if (basicInfo.documentsRequired) {
+            const validDocs = requiredDocuments.filter(d => d.documentName && d.documentName.trim());
+            if (validDocs.length === 0) {
+              errors.requiredDocuments = 'Add at least one document with a name when "Documents Required" is enabled';
+            } else {
+              requiredDocuments.forEach((doc, idx) => {
+                if (!doc.documentName || !doc.documentName.trim()) {
+                  errors[`doc_${idx}_name`] = `Document #${idx + 1} name cannot be empty`;
+                }
+              });
+            }
+          }
         }
         break;
         
@@ -280,13 +295,14 @@ export const ServiceProvider = ({ children }) => {
       frequency: '',
       duration: '',
       durationUnit: '',
-      documentsRequired: true,
+      documentsRequired: false,
       isGstApplicable: true,
       gstPercentage: 18,
       finalIndividualPrice: '',
       photoFile: null,
       photoUrl: '',
     });
+    setRequiredDocuments([]);
     setPriceMode('fixed');
     setDiscountPercentage('');
     setSelectedMasterFields([]);
@@ -349,6 +365,8 @@ export const ServiceProvider = ({ children }) => {
     setNewCustomField,
     trackSteps,
     setTrackSteps,
+    requiredDocuments,
+    setRequiredDocuments,
     resetForm,
     fetchCategories,
     fetchSubcategories,
