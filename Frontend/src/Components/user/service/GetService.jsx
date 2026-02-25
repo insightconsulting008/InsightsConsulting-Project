@@ -272,10 +272,10 @@ const handlePayment = async () => {
     console.log("Payment response:", response.data);
 
     var options = {
-      "key": "YOUR_KEY_ID", // Enter the Key ID generated from the Dashboard
-      "amount": totalAmount,// Convert to paise (Razorpay expects amount in paise)
+      "key": response.data.key, // Enter the Key ID generated from the Dashboard
+      "amount": response.data.amount,// Convert to paise (Razorpay expects amount in paise)
       "currency": "INR",
-      "order_id": response.data.order_id, // Use the order_id from your API response
+      "order_id": response.data.orderId, // Use the order_id from your API response
       "handler": function (response){
         alert(response.razorpay_payment_id);
         alert(response.razorpay_order_id);
