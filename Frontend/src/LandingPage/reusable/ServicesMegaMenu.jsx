@@ -80,15 +80,15 @@ export default function ServicesMegaMenu() {
       console.log(err);
       setServices([]);
     } finally {
-      setLoadingServices(false);
+      setLoadingServices(false); 
     }
   };
 
   return (
-    <div className="absolute -left-57 top-full mt-6 w-[1200px] bg-white shadow-xl border rounded-xl p-8 grid grid-cols-3 gap-10">
+    <div className="absolute -left-57 top-full mt-6 w-[600px] bg-white shadow-xl border rounded-xl p-8 grid grid-cols-2 gap-10">
 
-      {/* ================= CATEGORIES ================= */}
-      <div>
+   
+      <div className="w-full  ">
         <h4 className="text-xs tracking-wider text-gray-400 mb-4 uppercase">
           Categories
         </h4>
@@ -98,16 +98,15 @@ export default function ServicesMegaMenu() {
         ) : (
           <div className="space-y-2">
             {categories.map((cat) => (
-  <div
-    key={cat.categoryId}
-    onMouseEnter={() => fetchSubcategories(cat.categoryId)}
-    onClick={() => navigate(`/services/${cat.categoryId}`)}  // ✅ redirect
-    className={`flex justify-between items-center gap-3 p-2 rounded-md cursor-pointer transition ${
-      activeCat === cat.categoryId
-        ? "bg-gray-100"
-        : "hover:bg-gray-50"
-    }`}
-  >
+              <div
+                key={cat.categoryId}
+                onMouseEnter={() => fetchSubcategories(cat.categoryId)}
+                // ✅ redirect
+                className={`flex justify-between items-center gap-3 p-2 rounded-md cursor-pointer transition ${activeCat === cat.categoryId
+                    ? "bg-gray-100"
+                    : "hover:bg-gray-50"
+                  }`}
+              >
                 <div className="flex gap-3">
                   <FileText size={18} className="text-gray-500 mt-1" />
                   <p className="font-medium text-gray-800">
@@ -122,7 +121,7 @@ export default function ServicesMegaMenu() {
       </div>
 
       {/* ================= SUBCATEGORIES ================= */}
-      <div>
+      <div className="w-full">
         <h4 className="text-xs tracking-wider text-gray-400 mb-4 uppercase">
           Subcategories
         </h4>
@@ -135,14 +134,22 @@ export default function ServicesMegaMenu() {
               <div
                 key={sub.subCategoryId}
                 onMouseEnter={() => fetchServices(sub.subCategoryId)}
+                onClick={() =>
+                  navigate(`/services/${activeCat}/${sub.subCategoryId}`, {
+                    state: {
+                      categoryName: categories.find(c => c.categoryId === activeCat)?.categoryName,
+                      subCategoryName: sub.subCategoryName,
+                    },
+                  })
+                }
                 className={`flex justify-between items-center gap-3 p-2 rounded-md cursor-pointer transition ${activeSub === sub.subCategoryId
-                    ? "bg-gray-100"
-                    : "hover:bg-gray-50"
+                  ? "bg-gray-100"
+                  : "hover:bg-gray-50"
                   }`}
               >
                 <div className="flex gap-3">
                   <FileText size={18} className="text-gray-500 mt-1" />
-                  <p className="font-medium text-gray-800">
+                  <p className="font-medium text-yellow">
                     {sub.subCategoryName}
                   </p>
                 </div>
@@ -158,7 +165,7 @@ export default function ServicesMegaMenu() {
       </div>
 
       {/* ================= SERVICES ================= */}
-      <div>
+      {/* <div>
         <h4 className="text-xs tracking-wider text-gray-400 mb-4 uppercase">
           Services
         </h4>
@@ -196,7 +203,7 @@ export default function ServicesMegaMenu() {
         {!loadingServices && activeSub && services.length === 0 && (
           <p className="text-gray-400 text-sm">No services found</p>
         )}
-      </div>
+      </div> */}
     </div>
   );
 }

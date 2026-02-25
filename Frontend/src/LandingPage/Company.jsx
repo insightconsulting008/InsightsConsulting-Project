@@ -1,5 +1,10 @@
 
-
+import { TbUsers } from "react-icons/tb";
+import { FaRegHeart } from "react-icons/fa";
+import { AiOutlineRise } from "react-icons/ai";
+import { BsEmojiSmile } from "react-icons/bs";
+import { FaRegFlag } from "react-icons/fa";
+import { RiFlashlightLine } from "react-icons/ri";
 const About = () => {
   
   //Team Members
@@ -15,38 +20,38 @@ const About = () => {
   ];
 
  //Features
-  const values = [
-    {
-      title: "Care about our team",
-      desc: "Understand what matters to our employees. Give them what they need to do their best work.",
-      icon: "https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/footer/i1.png",
-    },
-    {
-      title: "Be excellent to each other",
-      desc: "No games. No bullshit. We rely on our peers to improve. Be open, honest and kind.",
-      icon: "https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/footer/i4.png",
-    },
-    {
-      title: "Pride in what we do",
-      desc: "Value quality and integrity in everything we do. At all times. No exceptions.",
-      icon: "https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/footer/i5.png",
-    },
-    {
-      title: "Don't #!&$ the customer",
-      desc: "Understand customers' stated and unstated needs. Make them wildly successful.",
-      icon: "https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/footer/i3.png",
-    },
-    {
-      title: "Do the impossible",
-      desc: "Be energized by difficult problems. Revel in unknowns. Ask \"Why?\", but always question, \"Why not?\"",
-      icon: "https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/footer/i2.png",
-    },
-    {
-      title: "Sweat the small stuff",
-      desc: "We believe the best products come from the best attention to detail. Sweat the small stuff.",
-      icon: "https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/footer/i4.png",
-    },
-  ];
+const values = [
+  {
+    title: "Client-Centric Mindset",
+    desc: "We place our clients at the core of every decision, ensuring solutions that genuinely support their growth and compliance needs.",
+    icon: <TbUsers/>,
+  },
+  {
+    title: "Integrity & Transparency",
+    desc: "We operate with honesty, clarity, and ethical responsibility, building long-term trust through every interaction.",
+    icon: < FaRegHeart/>,
+  },
+  {
+    title: "Commitment to Excellence",
+    desc: "We maintain the highest standards of accuracy, quality, and professionalism in every service we deliver.",
+    icon:<AiOutlineRise/>,
+  },
+  {
+    title: "Reliability & Accountability",
+    desc: "We take ownership of our responsibilities, ensuring dependable service, timely delivery, and consistent support.",
+    icon: < BsEmojiSmile />,
+  },
+  {
+    title: "Solution-Driven Approach",
+    desc: "We embrace complex challenges with a practical mindset, focusing on clear, effective, and compliant outcomes.",
+    icon: <FaRegFlag/>,
+  },
+  {
+    title: "Attention to Detail",
+    desc: "We believe precision matters. Every process, document, and compliance step is handled with meticulous care.",
+    icon: <RiFlashlightLine/>,
+  },
+];
 
   //Logos
  const logos = [
@@ -69,11 +74,12 @@ const About = () => {
               About us
             </span>
  <h1 className="text-[32px] leading-[40px] lg:text-[48px] lg:leading-[60px] font-semibold text-[#181D27] tracking-[-0.02em]">
-              About the company
-            </h1>
- <p className="text-[18px] leading-[28px] lg:text-[20px] lg:leading-[30px] font-normal text-[#535862]">
-              Learn more about the company and the team behind it.
-            </p>
+  Building Reliable Business Solutions
+</h1>
+
+<p className="text-[18px] leading-[28px] lg:text-[20px] lg:leading-[30px] font-normal text-[#535862]">
+  We help businesses navigate compliance, taxation, and financial processes with clarity, confidence, and consistency.
+</p>
 </div>
         </div>
       </section>
@@ -95,12 +101,13 @@ const About = () => {
             {/* Right side */}
          <div className="w-full lg:w-[560px] flex flex-col gap-[48px] lg:gap-[64px]">
  <div className="w-full lg:w-[560px] flex flex-col gap-[12px] text-center lg:text-left">
-                <span className="text-[16px] font-semibold leading-[24px] text-[#D11C16]">
-                  We’ve helped hundreds of companies
-                </span>
+              <span className="text-[16px] font-semibold leading-[24px] text-[#D11C16]">
+  Trusted by growing businesses
+</span>
+
 <h2 className="text-[32px] lg:text-[48px] font-semibold leading-[40px] lg:leading-[60px] tracking-[-0.02em] text-[#181D27]">
-                  We’re only just getting started on our journey
-                </h2>
+  Supporting businesses at every stage of growth
+</h2>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-[32px] gap-y-[32px] lg:gap-y-[48px] w-full lg:w-[560px]">
@@ -109,16 +116,16 @@ const About = () => {
                     400+
                   </h3>
                   <p className="text-[18px] leading-[28px] font-medium text-[#181D27]">
-                    Projects completed
+                     Clients Supported 
                   </p>
                 </div>
 
                 <div className="w-full lg:w-[264px] flex flex-col gap-[8px] lg:gap-[20px] text-center lg:text-left">
                   <h3 className="text-[48px] lg:text-[60px] leading-tight lg:leading-[72px] tracking-[-0.02em] font-semibold text-[#D11C16]">
-                    600%
+                   30+
                   </h3>
                   <p className="text-[18px] leading-[28px] font-medium text-[#181D27]">
-                    Return on investment
+                    Years of Experience 
                   </p>
                 </div>
 
@@ -127,16 +134,16 @@ const About = () => {
                     10k
                   </h3>
                   <p className="text-[18px] leading-[28px] font-medium text-[#181D27]">
-                    Global downloads
+                   Compliance Filings Managed  
                   </p>
                 </div>
 
                 <div className="w-full lg:w-[264px] flex flex-col gap-[8px] lg:gap-[20px] text-center lg:text-left">
                   <h3 className="text-[48px] lg:text-[60px] leading-tight lg:leading-[72px] tracking-[-0.02em] font-semibold text-[#D11C16]">
-                    200+
+                   200+
                   </h3>
                   <p className="text-[18px] leading-[28px] font-medium text-[#181D27]">
-                    5-star reviews
+                 Businesses Served 
                   </p>
                 </div>
 
@@ -149,40 +156,12 @@ const About = () => {
       </section>
 
 {/* Social Proof Section  */}
-  <section className="w-full bg-white py-16 lg:py-24 antialiased">
-      <div className="max-w-[1280px] mx-auto px-[20px] lg:px-[32px]">
-         <div className="flex flex-col gap-[32px] items-center">
-          <p className="text-[16px] leading-[24px] font-medium text-[#535862] text-center">
-            From startups to the world’s largest companies
-          </p>
-<div className="w-full max-w-[1216px] flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap justify-center lg:justify-between items-center gap-y-[40px] gap-x-[32px] md:gap-x-[48px] lg:gap-x-0">
-             {logos.map((logo, index) => (
-              <div 
-                key={index} 
-                className="flex items-center gap-[12px] flex-shrink-0">
-                <img  src={logo.src}  alt={`${logo.name} mark`}  className="w-[44px] h-[44px] object-contain flex-shrink-0" />
- <span className="text-[24px] font-bold text-[#535862] tracking-tight antialiased">
-                  {logo.name}
-                </span>
-              </div>
-            ))}
-
-          </div>
-        </div>
-      </div>
-    </section>
-  
- {/* Divider Section */}
- <section className="w-full max-w-[1440px] mx-auto bg-white py-[20px]"> 
-  <div className="max-w-[1280px] mx-auto px-[32px]">
-   <div className="w-full h-[1px] bg-[#E9EAEB]"></div>
-  </div>
-</section>
+ 
 
 
 
 {/* Hiring Section */}
-<section className="w-full  mx-auto bg-white md:py-24 py-14 antialiased">
+{/* <section className="w-full  mx-auto bg-white md:py-24 py-14 antialiased">
 <div className="md:px-12 px-4 mx-auto ">
      <div className="max-w-[1216px] mx-auto flex flex-col items-center gap-[40px]">
       <div className="max-w-[768px] w-full flex flex-col items-center gap-[20px] text-center">
@@ -208,7 +187,7 @@ const About = () => {
         </button>
       </div>
 
-      {/* Members */}
+      
       <div className="w-full mt-[64px]">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[32px]">
           {teamMembers.map((member, index) => (
@@ -217,7 +196,7 @@ const About = () => {
                 <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
               </div>
 
-              {/* Name & Role Wrapper */}
+              
               <div className="flex flex-col gap-[8px] mb-[20px]">
                 <h3 className="text-[18px] font-semibold text-[#181D27] leading-[28px] ">{member.name}</h3>
                 <p className="text-[16px] font-medium text-[#D11C16] leading-[24px] mt-[-4px] ">{member.role}</p>
@@ -226,7 +205,7 @@ const About = () => {
                 </p>
               </div>
 
-              {/* Social Icons */}
+             
            <div className="flex justify-center gap-[16px]">
           <img 
             src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/footer/s1.png" 
@@ -251,6 +230,86 @@ const About = () => {
     </div>
   </div>
    
+</section> */}
+
+<section className="w-full bg-white py-14 lg:py-20">
+  <div className="lg:px-12 mx-auto px-4 m container flex flex-col lg:flex-row items-center gap-12">
+
+    {/* LEFT CONTENT */}
+    <div className="flex-1  text-center lg:text-left">
+
+      <span className="text-[#D11C16] text-sm font-semibold tracking-wide">
+        About Us
+      </span>
+
+      <h2 className="text-[#181D27] text-[30px] lg:text-[42px] leading-[38px] lg:leading-[52px] font-semibold tracking-[-0.02em] mt-3 relative inline-block">
+        Simplifying Compliance for Growing Businesses
+
+        {/* underline highlight */}
+        <img
+          src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/Vector%20(1).png?updatedAt=1771488262931"
+          alt="underline"
+          className="absolute -bottom-2 left-0 w-40 opacity-80 hidden sm:block"
+        />
+      </h2>
+
+      <p className="text-[#535862] text-[18px] leading-[30px] mt-6">
+        We help businesses navigate complex regulatory and compliance
+        requirements with clarity and confidence. From registrations and
+        filings to ongoing financial and tax support, our solutions are
+        designed to reduce friction and eliminate uncertainty.
+      </p>
+
+      <p className="text-[#535862] text-[18px] leading-[30px] mt-4">
+        Our focus is on precision, transparency, and efficiency — ensuring
+        that every process is handled accurately, every deadline is met,
+        and every client receives dependable professional guidance.
+      </p>
+    </div>
+
+    {/* RIGHT IMAGE */}
+    <div className="lg:pr-12">
+      <div className="flex-1 w-full max-w-[520px] relative ">
+      <div className="">
+        <img
+          src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1200&auto=format&fit=crop"
+          alt="Team working"
+          className="w-full h-[320px] lg:h-[420px] object-cover rounded-2xl shadow-md"
+        />
+
+        {/* decorative shape */}
+        <img src='https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/Abstract%20Design%20(4).png?updatedAt=1771772119170' className="absolute -top-10 -right-20 w-20" alt="" />
+      </div>
+    </div>
+    </div>
+
+  </div>
+
+   <section className="w-full bg-white py-16 lg:py-24 antialiased">
+      <div className="max-w-[1280px] mx-auto px-[20px] lg:px-[32px]">
+         <div className="flex flex-col gap-[32px] items-center">
+          <p className="text-[16px] leading-[24px] font-medium text-[#535862] text-center">
+           Trusted by startups, SMEs, and growing enterprises
+          </p>
+<div className="w-full max-w-[1216px] flex flex-col md:flex-row md:flex-wrap lg:flex-nowrap justify-center lg:justify-between items-center gap-y-[40px] gap-x-[32px] md:gap-x-[48px] lg:gap-x-0">
+             {logos.map((logo, index) => (
+              <div 
+                key={index} 
+                className="flex items-center gap-[12px] flex-shrink-0">
+                <img  src={logo.src}  alt={`${logo.name} mark`}  className="w-[44px] h-[44px] object-contain flex-shrink-0" />
+ <span className="text-[24px] font-bold text-[#535862] tracking-tight antialiased">
+                  {logo.name}
+                </span>
+              </div>
+            ))}
+
+          </div>
+        </div>
+      </div>
+    </section>
+  
+ {/* Divider Section */}
+ 
 </section>
 
 
@@ -264,11 +323,12 @@ const About = () => {
                   Our values
                 </span>
                 <h2 className="text-[#181D27] text-[30px] lg:text-[36px] leading-[38px] lg:leading-[44px] font-semibold tracking-[-0.02em]">
-                  How we work at Untitled
+                  How We Deliver Value to Businesses
                 </h2>
               </div>
               <p className="text-[#535862] text-[18px] lg:text-[20px] leading-[30px] font-normal">
-                Our shared values keep us connected and guide us as one team.
+                We combine expertise, efficiency, and transparency to simplify complex
+  compliance processes for growing organizations.
               </p>
             </div>
   <div className="w-full max-w-[1216px] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-[32px] gap-y-[48px] lg:gap-y-[64px]">
@@ -277,12 +337,9 @@ const About = () => {
                   key={index} 
                   className="w-full max-w-[384px] flex flex-col items-center gap-[20px] mx-auto" >
                 
-                  <div className="w-[48px] h-[48px] rounded-full  flex items-center justify-center bg-[#F4EBFF]">
-                    <img 
-                      src={item.icon} 
-                      alt={item.title} 
-                      className="w-[24px] h-[24px] object-contain" 
-                    />
+                  <div className="w-[48px] h-[48px] text-[#D11C16] bg-[#F4EBFF] rounded-full  flex items-center justify-center bg-[#F4EBFF]">
+                    
+                    {item.icon}
                   </div>
  <div className="flex flex-col gap-[8px] text-center">
                     <h3 

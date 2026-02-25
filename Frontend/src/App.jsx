@@ -34,6 +34,7 @@ import Contact from "./LandingPage/Contact";
 import About from "./LandingPage/Company";
 import Servicehub from "./LandingPage/Servicehub";
 import Footer from "./LandingPage/Footer";
+import ServiceInfoSection from "./LandingPage/ServiceInfo";
 
 const NavbarController = ({ setRefreshDepartmentsTrigger }) => {
   const location = useLocation();
@@ -54,6 +55,20 @@ const NavbarController = ({ setRefreshDepartmentsTrigger }) => {
 
   if (role === "STAFF") return <StaffNav />;
   if (role === "USER") return <UserNav />;
+
+  return null;
+};
+
+const FooterController = () => {
+  const location = useLocation();
+  const role = sessionStorage.getItem("role");
+
+
+  if (location.pathname === "/login") return null;
+
+
+  if (!role) return <Footer />;
+
 
   return null;
 };
@@ -113,13 +128,13 @@ const App = () => {
         <Route path="/resource" element={<Blog />} />
         <Route path="/resource/:slug" element={<Blogdesc />} />
         <Route path="/add-blog" element={<Addblog />} />
-        <Route path="/services/:categoryId"element={<ServiceInfo />} />
+        <Route path="/services/:categoryId/:subCategoryId" element={<ServiceInfoSection />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/company" element={<About />} />
         <Route path="/servicehub" element={<Servicehub />} />
        
       </Routes>
-      <Footer />;
+      <FooterController />;
     </BrowserRouter>
   );
 };

@@ -25,21 +25,22 @@ const Footer = () => {
    
   
 <section className="w-full pt-[64px] pb-[48px]">
-  <div className=" md:px-14 px-4 mx-auto ">
+  <div className=" lg:px-14 px-4 mx-auto ">
     
     <div className=" mx-auto flex flex-col lg:flex-row justify-between items-center lg:items-start gap-[32px]">
       
       <div className="flex flex-col gap-[16px] text-center lg:text-left">
-        <h2 className="text-[#181D27] text-[24px] lg:text-[30px] leading-[38px] font-semibold tracking-[-0.02em]">
-          Start your 30-day free trial
-        </h2>
-        <p className="text-[#535862] text-[18px] lg:text-[20px] leading-[30px] font-normal">
-          Join over 4,000+ startups already growing with Untitled.
-        </p>
-      </div>
+  <h2 className="text-[#181D27] text-[24px] lg:text-[30px] leading-[38px] font-semibold tracking-[-0.02em]">
+    Simplify Your Business Compliance Today
+  </h2>
+
+  <p className="text-[#535862] text-[18px] lg:text-[20px] leading-[30px] font-normal">
+    Trusted by businesses for registrations, filings, and regulatory support.
+  </p>
+</div>
 
       
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-[12px] w-full lg:w-auto">
+      <div className="flex flex-col flex-row items-center justify-center gap-[12px] w-full lg:w-auto">
        
         <button className="w-full sm:w-[128px] h-[48px] border border-[#D5D7DA] rounded-[8px] text-[#414651] font-semibold shadow-sm hover:bg-gray-50 transition-all">
           Learn more
@@ -56,7 +57,7 @@ const Footer = () => {
 </section>
 
      {/*Divider*/}
-      <div className=" mx-auto px-4 md:px-12">
+      <div className=" mx-auto px-4 lg:px-12">
         <div className=" mx-auto h-[1px] bg-[#E9EAEB]"></div>
       </div>
 
