@@ -15,7 +15,6 @@ html {
   .border{
     @apply border-2 border-[#E5EFFF]
   }
-  
 }
 
 @theme {
@@ -28,5 +27,4 @@ html {
   --color-dark: #000000;
   --color-red: #D11C16;
   --color-yellow: #F0B604;
- 
 }

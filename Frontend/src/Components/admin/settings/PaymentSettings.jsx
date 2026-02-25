@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Eye, EyeOff, Save } from "lucide-react";
+import { Eye, EyeOff, Save, Pencil, X } from "lucide-react";
 
 const API_URL = "https://insightsconsult-backend.onrender.com/settings/payment";
 
@@ -19,15 +19,17 @@ const PaymentSettings = () => {
 
   const [paymentMethods, setPaymentMethods] = useState([]);
 
+  // Track whether we're editing an existing record
+  const [editingId, setEditingId] = useState(null); // null = create mode
+
   /* ------------------------------------
      GET PAYMENT SETTINGS
   ------------------------------------ */
   const fetchPaymentMethods = async () => {
     try {
       const res = await axios.get(API_URL);
-
       if (res.data?.success) {
-        setPaymentMethods(res.data.data); // ✅ IMPORTANT
+        setPaymentMethods(res.data.data);
       }
     } catch (err) {
       console.error("Failed to fetch payment methods", err);
@@ -39,28 +41,55 @@ const PaymentSettings = () => {
   }, []);
 
   /* ------------------------------------
-     SAVE PAYMENT SETTINGS
+     RESET FORM
+  ------------------------------------ */
+  const resetForm = () => {
+    setEditingId(null);
+    setIsRazorpayEnabled(false);
+    setRazorpayKeyId("");
+    setRazorpaySecret("");
+    setWebhookSecret("");
+    setShowRazorpaySecret(false);
+    setShowWebhookSecret(false);
+    setError("");
+  };
+
+  /* ------------------------------------
+     POPULATE FORM FOR EDIT
+  ------------------------------------ */
+  const handleEdit = (item) => {
+    setEditingId(item.paymentSettingId);
+    setIsRazorpayEnabled(item.isRazorpayEnabled);
+    setRazorpayKeyId(item.razorpayKeyId || "");
+    // Secret fields are intentionally left blank for security —
+    // user must re-enter them to update
+    setRazorpaySecret("");
+    setWebhookSecret("");
+    setError("");
+    setSuccess("");
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  /* ------------------------------------
+     SAVE / UPDATE PAYMENT SETTINGS
   ------------------------------------ */
   const handleSubmit = async () => {
     setError("");
     setSuccess("");
-
-    if (!isRazorpayEnabled) {
-      setError("Please enable Razorpay to save payment settings");
-      return;
-    }
 
     if (!razorpayKeyId.trim()) {
       setError("Razorpay Key ID is required");
       return;
     }
 
-    if (!razorpaySecret.trim()) {
+    // On create, all fields required. On edit, secrets are optional (skip if blank)
+    if (!editingId && !razorpaySecret.trim()) {
       setError("Razorpay Secret Key is required");
       return;
     }
 
-    if (!webhookSecret.trim()) {
+    if (!editingId && !webhookSecret.trim()) {
       setError("Webhook Secret is required");
       return;
     }
@@ -68,31 +97,37 @@ const PaymentSettings = () => {
     setLoading(true);
 
     try {
-      await axios.post(
-        API_URL,
-        {
-          isRazorpayEnabled,
-          razorpayKeyId,
-          razorpaySecret,
-          webhookSecret,
-        },
-        {
+      const payload = {
+        isRazorpayEnabled,
+        razorpayKeyId,
+        // Only include secrets if they were entered (avoids overwriting with empty on edit)
+        ...(razorpaySecret.trim() && { razorpaySecret }),
+        ...(webhookSecret.trim() && { webhookSecret }),
+      };
+
+      if (editingId) {
+        // UPDATE existing record
+        await axios.put(`${API_URL}/${editingId}`, payload, {
           headers: { "Content-Type": "application/json" },
-        }
-      );
+        });
+        setSuccess("Payment settings updated successfully");
+      } else {
+        // CREATE new record
+        await axios.post(API_URL, payload, {
+          headers: { "Content-Type": "application/json" },
+        });
+        setSuccess("Payment settings saved successfully");
+      }
 
-      setSuccess("Payment settings saved successfully");
-
-      setIsRazorpayEnabled(false);
-      setRazorpayKeyId("");
-      setRazorpaySecret("");
-      setWebhookSecret("");
-
-      fetchPaymentMethods(); // ✅ refresh list
-
+      resetForm();
+      fetchPaymentMethods();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError("Failed to save payment settings");
+      setError(
+        editingId
+          ? "Failed to update payment settings"
+          : "Failed to save payment settings"
+      );
     } finally {
       setLoading(false);
     }
@@ -124,6 +159,19 @@ const PaymentSettings = () => {
 
       {/* FORM */}
       <div className="mt-8 bg-white rounded-xl shadow-sm p-6 space-y-6">
+        {/* Edit mode banner */}
+        {editingId && (
+          <div className="flex items-center justify-between bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm">
+            <span>✏️ Editing existing payment setting</span>
+            <button
+              onClick={resetForm}
+              className="flex items-center gap-1 text-blue-500 hover:text-blue-700"
+            >
+              <X size={14} /> Cancel
+            </button>
+          </div>
+        )}
+
         {/* TOGGLE */}
         <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
           <div>
@@ -160,7 +208,11 @@ const PaymentSettings = () => {
           <div className="relative">
             <input
               type={showRazorpaySecret ? "text" : "password"}
-              placeholder="Razorpay Secret Key"
+              placeholder={
+                editingId
+                  ? "Razorpay Secret Key (leave blank to keep current)"
+                  : "Razorpay Secret Key"
+              }
               value={razorpaySecret}
               onChange={(e) => setRazorpaySecret(e.target.value)}
               className="border rounded-lg px-4 py-2 w-full"
@@ -177,7 +229,11 @@ const PaymentSettings = () => {
           <div className="relative">
             <input
               type={showWebhookSecret ? "text" : "password"}
-              placeholder="Webhook Secret"
+              placeholder={
+                editingId
+                  ? "Webhook Secret (leave blank to keep current)"
+                  : "Webhook Secret"
+              }
               value={webhookSecret}
               onChange={(e) => setWebhookSecret(e.target.value)}
               className="border rounded-lg px-4 py-2 w-full"
@@ -193,28 +249,38 @@ const PaymentSettings = () => {
         </div>
 
         {/* SAVE BUTTON */}
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-3">
+          {editingId && (
+            <button
+              onClick={resetForm}
+              className="px-6 py-3 border border-gray-300 text-gray-600 rounded-xl hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          )}
           <button
             onClick={handleSubmit}
             disabled={loading}
             className="px-10 py-3 flex items-center gap-2 bg-[#6869AC] text-white rounded-xl disabled:opacity-50"
           >
             <Save size={18} />
-            {loading ? "Saving..." : "Save Settings"}
+            {loading
+              ? editingId
+                ? "Updating..."
+                : "Saving..."
+              : editingId
+              ? "Update Settings"
+              : "Save Settings"}
           </button>
         </div>
       </div>
 
       {/* LIST PAYMENT METHODS */}
       <div className="mt-10 bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold mb-4">
-          Added Payment Methods
-        </h2>
+        <h2 className="text-lg font-semibold mb-4">Added Payment Methods</h2>
 
         {paymentMethods.length === 0 ? (
-          <p className="text-gray-500 text-sm">
-            No payment methods added yet.
-          </p>
+          <p className="text-gray-500 text-sm">No payment methods added yet.</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -223,6 +289,7 @@ const PaymentSettings = () => {
                 <th>Status</th>
                 <th>Key ID</th>
                 <th>Last Updated</th>
+                <th>Actions</th>
               </tr>
             </thead>
 
@@ -230,11 +297,11 @@ const PaymentSettings = () => {
               {paymentMethods.map((item) => (
                 <tr
                   key={item.paymentSettingId}
-                  className="border-b last:border-none"
+                  className={`border-b last:border-none ${
+                    editingId === item.paymentSettingId ? "bg-blue-50" : ""
+                  }`}
                 >
-                  <td className="px-2 py-3 font-medium">
-                    Razorpay
-                  </td>
+                  <td className="px-2 py-3 font-medium">Razorpay</td>
 
                   <td className="text-center">
                     {item.isRazorpayEnabled ? (
@@ -254,6 +321,15 @@ const PaymentSettings = () => {
 
                   <td className="text-gray-500 text-center">
                     {new Date(item.updatedAt).toLocaleString()}
+                  </td>
+
+                  <td className="text-center">
+                    <button
+                      onClick={() => handleEdit(item)}
+                      className="inline-flex items-center gap-1 text-[#6869AC] hover:underline text-xs font-medium"
+                    >
+                      <Pencil size={13} /> Edit
+                    </button>
                   </td>
                 </tr>
               ))}

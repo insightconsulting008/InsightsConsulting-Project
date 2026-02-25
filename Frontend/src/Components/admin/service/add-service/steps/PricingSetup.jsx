@@ -102,7 +102,7 @@ export default function PricingSetup() {
               onClick={() => handlePriceModeChange('fixed')}
               className={`px-3 py-1.5 text-xs rounded-lg ${
                 priceMode === 'fixed'
-                  ? 'bg-[#6869AC] text-white'
+                  ? 'bg-red text-white'
                   : 'bg-gray-200 text-gray-700'
               }`}
             >
@@ -112,7 +112,7 @@ export default function PricingSetup() {
               onClick={() => handlePriceModeChange('percentage')}
               className={`px-3 py-1.5 text-xs rounded-lg ${
                 priceMode === 'percentage'
-                  ? 'bg-[#6869AC] text-white'
+                  ? 'bg-red text-white'
                   : 'bg-gray-200 text-gray-700'
               }`}
             >
@@ -144,7 +144,7 @@ export default function PricingSetup() {
                 className={`w-full pl-7 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 ${
                   stepErrors.individualPrice 
                     ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                    : 'border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]'
+                    : 'border-gray-300 focus:border-red focus:ring-red'
                 }`}
               />
             </div>
@@ -174,7 +174,7 @@ export default function PricingSetup() {
                     className={`w-full pl-9 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 ${
                       stepErrors.discountPercentage 
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]'
+                        : 'border-gray-300 focus:border-red focus:ring-red'
                     }`}
                   />
                 </>
@@ -197,7 +197,7 @@ export default function PricingSetup() {
                     className={`w-full pl-7 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 ${
                       stepErrors.offerPrice 
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]'
+                        : 'border-gray-300 focus:border-red focus:ring-red'
                     }`}
                   />
                 </>
@@ -241,7 +241,7 @@ export default function PricingSetup() {
                   isGstApplicable: e.target.checked,
                 }))
               }
-              className="w-4 h-4 text-[#6869AC] rounded border-gray-300 focus:ring-[#6869AC]"
+              className="w-4 h-4 text-red rounded border-gray-300 focus:ring-red"
             />
             <span className="ml-2 text-sm font-medium text-gray-800">
               GST Applicable
@@ -271,7 +271,7 @@ export default function PricingSetup() {
                     className={`w-full pl-3 pr-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-1 ${
                       stepErrors.gstPercentage 
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 focus:border-[#6869AC] focus:ring-[#6869AC]'
+                        : 'border-gray-300 focus:border-red focus:ring-red'
                     }`}
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
@@ -319,7 +319,7 @@ export default function PricingSetup() {
         </button>
         <button
           onClick={goToNextStep}
-          className="px-6 py-2 rounded-lg font-medium bg-[#6869AC] text-white hover:opacity-90"
+          className="px-6 py-2 rounded-lg font-medium bg-red text-white hover:opacity-90"
         >
           Next
         </button>

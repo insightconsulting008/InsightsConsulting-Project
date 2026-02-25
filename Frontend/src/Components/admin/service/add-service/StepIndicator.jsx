@@ -63,7 +63,7 @@ export default function StepIndicator() {
         {/* Vertical progress line */}
         <div className="absolute top-0 bottom-0 left-5 w-0.5 bg-gray-200 z-0"></div>
         <div 
-          className="absolute top-0 left-5 w-0.5 bg-primary z-10 transition-all duration-300"
+          className="absolute top-0 left-5 w-0.5 bg-red z-10 transition-all duration-300"
           style={{ height: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
         ></div>
 
@@ -77,9 +77,9 @@ export default function StepIndicator() {
                   onClick={() => canNavigateTo(step.id) && setCurrentStep(step.id)}
                   className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
                     isActive(step.id)
-                      ? 'bg-primary border-primary text-white'
+                      ? 'bg-red border-primary text-white'
                       : isCompleted(step.id)
-                      ? 'bg-primary border-primary text-white'
+                      ? 'bg-red border-primary text-white'
                       : 'bg-white border-gray-300 text-gray-500'
                   } ${canNavigateTo(step.id) ? 'cursor-pointer hover:scale-105' : 'cursor-default'}`}
                 >
@@ -95,8 +95,8 @@ export default function StepIndicator() {
               <div className="flex-1">
                 <div className="flex flex-col">
                   <span className={`text-base font-semibold ${
-                    isActive(step.id) ? 'text-primary' : 
-                    isCompleted(step.id) ? 'text-primary' : 'text-gray-700'
+                    isActive(step.id) ? 'text-red' : 
+                    isCompleted(step.id) ? 'text-red' : 'text-gray-700'
                   }`}>
                     {step.label}
                   </span>

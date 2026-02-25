@@ -35,7 +35,7 @@ export default function NavigationButtons() {
         className={`px-6 py-2 rounded-lg font-medium ${
           currentStep === 5
             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : 'bg-[#6869AC] text-white hover:opacity-90'
+            : 'bg-red text-white hover:opacity-90'
         }`}
       >
         Next

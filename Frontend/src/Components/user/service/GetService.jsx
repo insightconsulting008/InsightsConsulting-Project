@@ -225,103 +225,97 @@ export default function GetService() {
     }
   };
 
-  /* ---------------- SERVICE PAYMENT HANDLER ---------------- */
-  const handleProceedToPay = async () => {
-    if (!selectedService || !userId) {
-      setPaymentError("Service or user information missing");
-      return;
-    }
+ /* ---------------- SINGLE PAYMENT HANDLER FOR BOTH SERVICE AND BUNDLE ---------------- */
+const handlePayment = async () => {
+  // Check what's selected
+  if (!selectedService && !selectedBundle) {
+    setPaymentError("No service or bundle selected");
+    return;
+  }
 
-    setIsProcessingPayment(true);
-    setPaymentError(null);
-    setPaymentSuccess(false);
+  if (!userId) {
+    setPaymentError("User information missing");
+    return;
+  }
 
-    try {
-      const payload = {
-        userId: userId,
-        serviceId: selectedService.serviceId
-      };
+  setIsProcessingPayment(true);
+  setPaymentError(null);
+  setPaymentSuccess(false);
 
-      console.log("Sending payment request:", payload);
-      
-      const response = await axiosInstance.post(
-        "https://insightsconsult-backend.onrender.com/buy/service",
-        payload
-      );
+  try {
+    // Calculate total amount as a number based on selection
+    const totalAmount = selectedService 
+      ? Number(selectedService.finalIndividualPrice) 
+      : Number(selectedBundle.finalBundlePrice);
 
-      console.log("Payment response:", response.data);
-      
-      setPaymentData(response.data);
-      setPaymentSuccess(true);
-      
-      // Reset after successful payment
-      setTimeout(() => {
-        setShowPaymentPopup(false);
-        setPaymentSuccess(false);
-        setPaymentData(null);
-        setSelectedService(null);
-      }, 3000);
+    // Build payload dynamically based on what's selected
+    const payload = {
+      userId: userId,
+      amount: totalAmount  // Amount is already a number
+    };
 
-    } catch (error) {
-      console.error("Payment error:", error);
-      setPaymentError(
-        error.response?.data?.message || 
-        error.message || 
-        "Failed to process payment. Please try again."
-      );
-    } finally {
-      setIsProcessingPayment(false);
-    }
-  };
-
-  /* ---------------- BUNDLE PAYMENT HANDLER ---------------- */
-  const handleBundleProceedToPay = async () => {
-    if (!selectedBundle || !userId) {
-      setPaymentError("Bundle or user information missing");
-      return;
-    }
-
-    setIsProcessingPayment(true);
-    setPaymentError(null);
-    setPaymentSuccess(false);
-
-    try {
-      const payload = {
-        userId: userId,
-        bundleId: selectedBundle.bundleId
-      };
-
+    // Add serviceId if service is selected, otherwise add bundleId
+    if (selectedService) {
+      payload.serviceId = selectedService.serviceId;
+      console.log("Sending service payment request:", payload);
+    } else if (selectedBundle) {
+      payload.bundleId = selectedBundle.bundleId;
       console.log("Sending bundle payment request:", payload);
-      
-      const response = await axiosInstance.post(
-        "https://insightsconsult-backend.onrender.com/buy/service",
-        payload
-      );
-
-      console.log("Bundle payment response:", response.data);
-      
-      setPaymentData(response.data);
-      setPaymentSuccess(true);
-      
-      // Reset after successful payment
-      setTimeout(() => {
-        setShowBundlePaymentPopup(false);
-        setPaymentSuccess(false);
-        setPaymentData(null);
-        setSelectedBundle(null);
-      }, 3000);
-
-    } catch (error) {
-      console.error("Bundle payment error:", error);
-      setPaymentError(
-        error.response?.data?.message || 
-        error.message || 
-        "Failed to process payment. Please try again."
-      );
-    } finally {
-      setIsProcessingPayment(false);
     }
-  };
+
+    // Single API call for both
+    const response = await axiosInstance.post(
+      "https://insightsconsult-backend.onrender.com/buy/service",
+      payload
+    );
+
+    console.log("Payment response:", response.data);
+
+    var options = {
+      "key": "YOUR_KEY_ID", // Enter the Key ID generated from the Dashboard
+      "amount": totalAmount,// Convert to paise (Razorpay expects amount in paise)
+      "currency": "INR",
+      "order_id": response.data.order_id, // Use the order_id from your API response
+      "handler": function (response){
+        alert(response.razorpay_payment_id);
+        alert(response.razorpay_order_id);
+        alert(response.razorpay_signature);
+        
+        // You might want to verify the payment here
+        setPaymentData(response.data);
+        setPaymentSuccess(true);
+        
+        // Close popups after successful payment
+        setTimeout(() => {
+          setShowPaymentPopup(false);
+          setShowBundlePaymentPopup(false);
+          setPaymentSuccess(false);
+          setPaymentData(null);
+          setSelectedService(null);
+          setSelectedBundle(null);
+        }, 3000);
+      },
+      "prefill": {
+        "name": "Gaurav Kumar", // You can get this from user data if available
+        "email": "gaurav.kumar@example.com",
+        "contact": "+919876543210"
+      },
+    };
+    
+    var rzp1 = new Razorpay(options);
+    rzp1.open();
+
+  } catch (error) {
+    console.error("Payment error:", error);
+    setPaymentError(
+      error.response?.data?.message || 
+      error.message || 
+      "Failed to process payment. Please try again."
+    );
+  } finally {
+    setIsProcessingPayment(false);
+  }
+};
 
   /* ---------------- GET CATEGORY/SUBCATEGORY NAME ---------------- */
   const getCategoryName = (categoryId) => {
@@ -409,19 +403,20 @@ export default function GetService() {
         }
       `}</style>
 
-      {/* ================= SERVICE PAYMENT POPUP MODAL ================= */}
-      {showPaymentPopup && (
+      {/* ================= SINGLE PAYMENT POPUP MODAL (WORKS FOR BOTH SERVICE AND BUNDLE) ================= */}
+      {(showPaymentPopup || showBundlePaymentPopup) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
             {/* Header */}
             <div className="border-b border-gray-200 p-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Confirm Payment
+                  {selectedService ? 'Confirm Payment' : 'Confirm Bundle Payment'}
                 </h3>
                 <button
                   onClick={() => {
                     setShowPaymentPopup(false);
+                    setShowBundlePaymentPopup(false);
                     setPaymentError(null);
                     setPaymentSuccess(false);
                   }}
@@ -444,7 +439,7 @@ export default function GetService() {
                     Payment Successful!
                   </h4>
                   <p className="text-gray-600 mb-4">
-                    Your payment has been processed successfully.
+                    Your {selectedService ? 'service' : 'bundle'} purchase has been processed successfully.
                   </p>
                   {paymentData?.orderId && (
                     <div className="bg-gray-50 p-3 rounded-lg mb-4">
@@ -460,7 +455,7 @@ export default function GetService() {
                 </div>
               ) : (
                 <>
-                  {/* Service Info */}
+                  {/* Service or Bundle Info */}
                   {selectedService && (
                     <div className="mb-6">
                       <div className="flex items-start gap-4 mb-4">
@@ -501,117 +496,6 @@ export default function GetService() {
                     </div>
                   )}
 
-                  {/* User Info */}
-                  <div className="mb-6">
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">Payment Details</h5>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">User ID</span>
-                        <span className="font-mono text-xs">{userId.substring(0, 12)}...</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Service ID</span>
-                        <span className="font-mono text-xs">{selectedService?.serviceId?.substring(0, 12)}...</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Error Message */}
-                  {paymentError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm text-red-600">{paymentError}</p>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowPaymentPopup(false)}
-                      className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                      disabled={isProcessingPayment}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleProceedToPay}
-                      disabled={isProcessingPayment}
-                      className={`flex-1 py-3 ${primary.bg} text-white rounded-lg font-medium ${primary.hover} transition-colors flex items-center justify-center gap-2`}
-                    >
-                      {isProcessingPayment ? (
-                        <>
-                          <Loader2 size={18} className="animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        `Pay ₹${formatPrice(selectedService?.finalIndividualPrice || 0)}`
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Security Note */}
-                  <p className="text-xs text-gray-500 text-center mt-4 flex items-center justify-center gap-1">
-                    <Shield size={12} className="text-gray-400" />
-                    Secure payment • 256-bit SSL encryption
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================= BUNDLE PAYMENT POPUP MODAL ================= */}
-      {showBundlePaymentPopup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
-            {/* Header */}
-            <div className="border-b border-gray-200 p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Confirm Bundle Payment
-                </h3>
-                <button
-                  onClick={() => {
-                    setShowBundlePaymentPopup(false);
-                    setPaymentError(null);
-                    setPaymentSuccess(false);
-                  }}
-                  className="text-gray-400 hover:text-gray-500 transition-colors"
-                  disabled={isProcessingPayment}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6">
-              {paymentSuccess ? (
-                <div className="text-center py-4">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CheckCircle className="text-green-600" size={32} />
-                  </div>
-                  <h4 className="text-xl font-semibold text-gray-900 mb-2">
-                    Payment Successful!
-                  </h4>
-                  <p className="text-gray-600 mb-4">
-                    Your bundle purchase has been processed successfully.
-                  </p>
-                  {paymentData?.orderId && (
-                    <div className="bg-gray-50 p-3 rounded-lg mb-4">
-                      <p className="text-sm text-gray-600">Order ID</p>
-                      <p className="font-mono text-sm font-semibold text-gray-900">
-                        {paymentData.orderId}
-                      </p>
-                    </div>
-                  )}
-                  <div className="text-sm text-gray-500">
-                    Redirecting in 3 seconds...
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {/* Bundle Info */}
                   {selectedBundle && (
                     <div className="mb-6">
                       <div className="flex items-start gap-4 mb-4">
@@ -670,8 +554,13 @@ export default function GetService() {
                         <span className="font-mono text-xs">{userId.substring(0, 12)}...</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Bundle ID</span>
-                        <span className="font-mono text-xs">{selectedBundle?.bundleId?.substring(0, 12)}...</span>
+                        <span className="text-gray-600">{selectedService ? 'Service' : 'Bundle'} ID</span>
+                        <span className="font-mono text-xs">
+                          {selectedService 
+                            ? selectedService?.serviceId?.substring(0, 12)
+                            : selectedBundle?.bundleId?.substring(0, 12)
+                          }...
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -686,16 +575,19 @@ export default function GetService() {
                   {/* Action Buttons */}
                   <div className="flex gap-3">
                     <button
-                      onClick={() => setShowBundlePaymentPopup(false)}
+                      onClick={() => {
+                        setShowPaymentPopup(false);
+                        setShowBundlePaymentPopup(false);
+                      }}
                       className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                       disabled={isProcessingPayment}
                     >
                       Cancel
                     </button>
                     <button
-                      onClick={handleBundleProceedToPay}
+                      onClick={handlePayment}
                       disabled={isProcessingPayment}
-                      className={`flex-1 py-3 ${primary.bg} text-white rounded-lg font-medium ${primary.hover} transition-colors flex items-center justify-center gap-2`}
+                      className={`flex-1 py-3 ${selectedBundle ? 'bg-purple-600' : primary.bg} text-white rounded-lg font-medium ${selectedBundle ? 'hover:bg-purple-700' : primary.hover} transition-colors flex items-center justify-center gap-2`}
                     >
                       {isProcessingPayment ? (
                         <>
@@ -703,7 +595,11 @@ export default function GetService() {
                           Processing...
                         </>
                       ) : (
-                        `Pay ₹${formatPrice(selectedBundle?.finalBundlePrice || 0)}`
+                        `Pay ₹${formatPrice(
+                          selectedService 
+                            ? selectedService?.finalIndividualPrice 
+                            : selectedBundle?.finalBundlePrice || 0
+                        )}`
                       )}
                     </button>
                   </div>
