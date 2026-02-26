@@ -244,14 +244,12 @@ const handlePayment = async () => {
 
   try {
     // Calculate total amount as a number based on selection
-    const totalAmount = selectedService 
-      ? Number(selectedService.finalIndividualPrice) 
-      : Number(selectedBundle.finalBundlePrice);
+    
 
     // Build payload dynamically based on what's selected
     const payload = {
       userId: userId,
-      amount: totalAmount  // Amount is already a number
+        // Amount is already a number
     };
 
     // Add serviceId if service is selected, otherwise add bundleId
@@ -270,16 +268,23 @@ const handlePayment = async () => {
     );
 
     console.log("Payment response:", response.data);
-
+if (!response.data.paymentRequired) {
+        alert("Service activated!");
+        return;
+      }
+ 
     var options = {
       "key": response.data.key, // Enter the Key ID generated from the Dashboard
       "amount": response.data.amount,// Convert to paise (Razorpay expects amount in paise)
       "currency": "INR",
       "order_id": response.data.orderId, // Use the order_id from your API response
       "handler": function (response){
-        alert(response.razorpay_payment_id);
-        alert(response.razorpay_order_id);
-        alert(response.razorpay_signature);
+        console.log(response)
+         const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = response;
+        if (razorpay_payment_id && razorpay_order_id && razorpay_signature) {
+            alert("Payment successful. Verifying...");
+        }
+        
         
         // You might want to verify the payment here
         setPaymentData(response.data);

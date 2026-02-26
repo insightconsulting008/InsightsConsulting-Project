@@ -306,7 +306,7 @@ export default function RecommendedServices() {
       <div className="bg-white px-6 pt-5 pb-0 border-b border-gray-100">
         {/* ── Page Title ── */}
         <div className="mb-4">
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
             {selectedSub?.subCategoryName || selectedCat?.categoryName || "GST Registration"}
           </h1>
           <p className="text-sm text-gray-400 mt-0.5">
@@ -518,7 +518,7 @@ export default function RecommendedServices() {
             </div>
 
             {/* ── Pagination ── */}
-            {totalPages > 1 && (
+            {totalPages > 0 && (
               <div className="flex items-center justify-between mt-8 px-2">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}

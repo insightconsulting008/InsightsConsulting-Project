@@ -10,20 +10,23 @@ import { useState } from "react";
 
 
 const Contact = () => {
-  const cards = [
-    {
-      title: "Volunteer Opportunities",
-      description: "Interested in becoming a volunteer and making a hands-on difference? Please visit our Volunteer page for more information and to fill out an application.",
-      buttonText: "Visit Page",
-      link: "/volunteer"
-    },
-    {
-      title: "Donation Information",
-      description: "To make a donation or learn more about our various giving options, visit our Donation page.",
-      buttonText: "Donation Page",
-      link: "/donate"
-    }
-  ];
+ const cards = [
+  {
+    title: "Book a Consultation",
+    description:
+      "Have questions about GST registration, filings, or compliance? Speak directly with our experts and get clear, practical guidance tailored to your business.",
+    buttonText: "Schedule a Call",
+    link: "/contact"
+  },
+  {
+    title: "Explore Our Services",
+    description:
+      "Discover our complete range of GST and business compliance solutions, designed to simplify regulations, reduce risk, and keep your business running smoothly.",
+    buttonText: "View Services",
+    link: "/services"
+  }
+];
+
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -69,25 +72,29 @@ const Contact = () => {
     <div className="flex flex-col items-center w-full overflow-x-hidden bg-white">
 
       {/* SECTION ONE: Contact Header */}
-      <section className="mt-[60px] md:mt-[100px] mx-[20px] relative bg-[#FCFCFD] md:mx-[60px] border-[4px] md:border-[6px] flex flex-col lg:flex-row justify-around border-black/5  px-4 md:px-12 w-[calc(100%-40px)] md:w-[calc(100%-120px)] min-h-fit rounded-[16px] p-8 md:p-12 items-center gap-10">
+      <section className="mt-[60px] relative bg-[#FCFCFD]  border-[4px] md:border-[6px] flex flex-col lg:flex-row justify-around border-black/5  px-4 md:px-12   rounded-[16px] p-8 md:p-18  gap-10">
         <img src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/Abstract%20Design.png" className=' absolute top-0 left-0 w-16' alt="" />
         {/* Red Badge Section */}
         <div className='flex flex-col items-center lg:items-start relative shrink-0'>
           <div className='bg-[#D11C16] px-6 py-3 rounded-[14px] text-white font-semibold text-[18px] md:text-4xl whitespace-nowrap shadow-sm'>
-            We Would Love to Hear
+           we would love to hear
+
           </div>
-          <div className='bg-[#D11C16] px-6 py-2 rounded-[10px] text-white font-semibold text-[18px] md:text-4xl mt-[-10px] md:ml-4 shadow-sm self-center lg:self-start'>
-            from You
+          <div className='bg-[#D11C16] px-6 py-2 rounded-[10px] text-white font-semibold text-[18px] md:text-4xl mt-[-10px]  shadow-sm self-center lg:self-start'>
+           from you
           </div>
         </div>
 
         <div className='flex flex-col gap-6 md:gap-[30px] flex-1 max-w-[639px]'>
           <p className='text-[15px] md:text-[16px] text-[#4C4C4D] text-center lg:text-left leading-relaxed'>
-            Thank you for your interest in ForHelp and our mission to uplift underprivileged children. We value your thoughts, questions, and feedback. Please don't hesitate to reach out to us. Our dedicated team is here to assist you.
+           Whether you’re starting a new venture, managing GST filings, or handling 
+      ongoing tax and financial compliance, our team is here to support you. 
+      Reach out to us for reliable guidance, timely assistance, and solutions 
+      tailored to your business needs.
           </p>
 
           {/* SOCIAL ICONS */}
-          <div className='flex gap-[12px] w-fit px-6 h-[60px] md:h-[70px] rounded-full border items-center justify-center border-black/5 border-[2px] self-center lg:self-start bg-white'>
+          <div className='flex gap-[12px] w-fit p-4 h-[60px] md:h-[70px] rounded-full border items-center justify-between border-black/5 border-[2px] self-center lg:self-start bg-white'>
             <img className='rounded-full bg-[#FFF6D7] p-[10px] md:p-[12px] w-[40px] h-[40px] md:w-[52px] md:h-[52px] object-contain hover:scale-110 transition-transform cursor-pointer' src="https://img.icons8.com/?size=100&id=118466&format=png&color=000000" alt="fb" />
             <img className='rounded-full bg-[#FFF6D7] p-[10px] md:p-[12px] w-[40px] h-[40px] md:w-[52px] md:h-[52px] object-contain hover:scale-110 transition-transform cursor-pointer' src="https://img.icons8.com/?size=100&id=60014&format=png&color=000000" alt="tw" />
             <img className='rounded-full bg-[#FFF6D7] p-[10px] md:p-[12px] w-[40px] h-[40px] md:w-[52px] md:h-[52px] object-contain hover:scale-110 transition-transform cursor-pointer' src="https://img.icons8.com/?size=100&id=98960&format=png&color=000000" alt="li" />
@@ -111,8 +118,8 @@ const Contact = () => {
       </section>
 
       {/* SECTION THREE: Form Section */}
-      <section className="w-full bg-gray-50 flex px-4 md:px-12 items-center justify-center py-20 mt-[60px]">
-        <div className="bg-white rounded-3xl p-6 md:p-12  w-full flex flex-col md:flex-row  gap-8 shadow-sm border border-gray-100">
+      <section className="w-full bg-gray-50 flex px-4 md:px-12 items-center justify-center md:py-20 mt-[60px]">
+        <div className="bg-white rounded-3xl p-6 md:p-12  w-full flex flex-col md:flex-row justify-center   gap-8 shadow-sm border border-gray-100">
 
           {/* Left Side */}
           <div className="w-full md:w-2/5 flex flex-col gap-4">
@@ -133,7 +140,7 @@ const Contact = () => {
           </div>
 
           {/* Right Side: Form */}
-          <div className="w-full md:w-3/5">
+          <div className="w-full md:w-3/5 flex flec-col justify-center ">
             <form className="flex flex-col justify-between" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2">
@@ -163,7 +170,7 @@ const Contact = () => {
                
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 justify-between gap-4 md:gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-800 ml-1">Email</label>
                   <input
@@ -189,7 +196,7 @@ const Contact = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-800 ml-1">Message</label>
+                <label className="text-sm font-bold text-gray-800 ml-1">Tell us about your requirement</label>
                 <textarea
                   rows="4"
                   name="message"
@@ -208,7 +215,7 @@ const Contact = () => {
                   </label>
                 </div>
                 <button className="w-full lg:w-auto bg-[#1a1a1a] text-white px-8 py-3 rounded-full font-medium hover:bg-black transition-colors">
-                  Donate Now
+          Request Consultation
                 </button>
               </div>
             </form>
@@ -217,7 +224,7 @@ const Contact = () => {
       </section>
 
       {/* SECTION FOUR: Volunteer & Donation Cards */}
-      <section className="w-full px-4 md:px-12 mt-[60px]">
+      <section className="w-full px-4 md:px-12 p-5 mt-5 lg:mt-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
           {cards.map((card, index) => (
             <div key={index} className="bg-[#FCFCFD] w-full rounded-[1.5rem] md:rounded-[2rem] p-8 md:p-12 border border-black/5 border-[2px] flex flex-col items-start justify-between min-h-fit">
@@ -248,20 +255,23 @@ const Contact = () => {
             <img src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/Abstract%20Design%20(3).png" alt="" />
           </div>
 
-          <div className="relative z-10 max-w-4xl flex flex-col gap-6 justify-center items-center">
+          <div className="relative z-10 max-w-5xl flex flex-col gap-6 justify-center items-center">
             <h2 className="text-[24px] md:text-[32px] font-semibold text-[#1A1A1A] leading-tight">
-              Donate Now and Help Level Up the Lives of Children in Need
+               Get Your Registrations & Compliance Handled by Professionals
             </h2>
             <p className="text-[#4C4C4D] text-[15px] md:text-[16px] max-w-2xl">
-              Your donation will help provide essential services to children in need, such as education, healthcare, nutrition, and enrichment.
+               Avoid delays, errors, and regulatory stress. Our experts ensure a smooth, accurate, and hassle-free process for your business.
+
+
+
             </p>
 
-            <div className="bg-white rounded-full p-2 pl-6 md:pl-10 flex items-center justify-between shadow-xl border border-white w-full max-w-2xl">
-              <span className="text-[13px] md:text-[15px] font-medium text-[#1A1A1A] hidden md:block">
-                Click here to donate now and help children in need.
+            <div className="lg:bg-white rounded-full lg:p-2 lg:pl-6  flex items-center justify-center lg:justify-between shadow-xl border border-white w-auto  lg:max-w-xl">
+              <span className="text-[13px] md:text-[15px] px-4 font-medium text-[#1A1A1A] hidden md:block">
+                   Get started with professional assistance
               </span>
-              <button className="flex items-center gap-3 bg-[#D11C16] hover:bg-red-700 text-white px-5 md:px-8 py-3 rounded-full transition-all shrink-0 ml-auto md:ml-0">
-                <span className="text-[14px]">Donate Now</span>
+              <button className="flex items-center gap-3 bg-[#D11C16] hover:bg-red-700 text-white px-5 md:px-8 py-3 rounded-full transition-all  ">
+                <span className="text-[14px]">Get Expert Assistance</span>
                 <ArrowUpRight className='bg-white text-black rounded-full p-1' size={20} />
               </button>
             </div>
@@ -269,132 +279,7 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="w-full bg-white px-6 md:px-16 border-t border-gray-100 pt-10 pb-6 font-sans text-[#1a1a1a]">
-        <div className="max-w-7xl mx-auto">
-          {/* Logo and Socials */}
-          <div className="flex items-center space-x-6 mb-10">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-black rounded-sm flex items-center justify-center">
-                <div className="w-3 h-3 bg-black"></div>
-              </div>
-              <span className="text-2xl font-bold tracking-tight">echo</span>
-            </div>
-            <div className="h-6 w-[1px] bg-gray-300"></div>
-            <div className="flex space-x-4">
-              <Linkedin className="w-5 h-5 cursor-pointer hover:text-blue-600" />
-              <div className="w-5 h-5 bg-black text-white flex items-center justify-center text-[10px] font-bold rounded-sm cursor-pointer">
-                M
-              </div>
-            </div>
-          </div>
-
-          {/* Main Grid: 2 columns on mobile, 4 on tablet, 12 on desktop */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-8 md:gap-4 lg:gap-8">
-            {/* Column 1 */}
-            <div className="col-span-1 lg:col-span-2">
-              <h4 className="font-bold mb-6 md:mb-10 text-gray-900">Resources</h4>
-              <ul className="space-y-4 md:space-y-12 text-sm text-gray-500">
-                <li className="hover:text-black cursor-pointer">Law Solutions</li>
-                <li className="text-blue-600 font-medium cursor-pointer">Workplace Policy</li>
-                <li className="hover:text-black cursor-pointer">HR Advisory</li>
-                <li className="hover:text-black cursor-pointer">Employee Handbooks</li>
-              </ul>
-            </div>
-
-            {/* Column 2 */}
-            <div className="col-span-1 lg:col-span-2">
-              <h4 className="font-bold mb-6 md:mb-10 text-gray-900">Platform</h4>
-              <ul className="space-y-4 md:space-y-12 text-sm text-gray-500">
-                <li className="hover:text-black cursor-pointer">Law Solutions</li>
-                <li className="hover:text-black cursor-pointer">Workplace Policy</li>
-                <li className="hover:text-black cursor-pointer">HR Advisory</li>
-                <li className="hover:text-black cursor-pointer">Employee Handbooks</li>
-              </ul>
-            </div>
-
-            {/* Column 3 */}
-            <div className="col-span-1 lg:col-span-2">
-              <h4 className="font-bold mb-6 md:mb-10 text-gray-900">Resources</h4>
-              <ul className="space-y-4 md:space-y-12 text-sm text-gray-500">
-                <li className="text-blue-600 font-medium cursor-pointer">Articles</li>
-                <li className="hover:text-black cursor-pointer">Documentation</li>
-                <li className="hover:text-black cursor-pointer">Tutorials</li>
-                <li className="hover:text-black cursor-pointer">Help Center</li>
-              </ul>
-            </div>
-
-            {/* Column 4 */}
-            <div className="col-span-1 lg:col-span-2">
-              <h4 className="font-bold mb-6 md:mb-10 text-gray-900">Company</h4>
-              <ul className="space-y-4 md:space-y-12 text-sm text-gray-500">
-                <li className="hover:text-black cursor-pointer">Law Solutions</li>
-                <li className="hover:text-black cursor-pointer">Workplace Policy</li>
-                <li className="hover:text-black cursor-pointer">HR Advisory</li>
-                <li className="text-blue-600 font-medium cursor-pointer">Employee Handbooks</li>
-              </ul>
-            </div>
-
-            {/* Newsletter Section: Takes full width on mobile/tablet, 4 cols on desktop */}
-            <div className="col-span-2 md:col-span-4 lg:col-span-4">
-              <div className="bg-[#f8f9fa] border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <div className="p-3 bg-white border-b border-gray-100 flex items-center space-x-2">
-                  <Mail className="w-5 h-5" />
-                  <span className="text-sm font-semibold">Newsletter</span>
-                </div>
-
-                <div className="p-3 bg-white">
-                  <label className="block text-xs text-gray-400 mb-2">Email address</label>
-                  <input
-                    type="text"
-                    defaultValue="jonathan.."
-                    className="w-full px-4 py-2 rounded-lg border border-blue-400 outline-none focus:ring-2 ring-blue-100 text-gray-800"
-                  />
-
-                  <div className="mt-4 flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked
-                      readOnly
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <p className="text-xs text-gray-600 leading-tight">
-                      I agree with the <span className="text-blue-600 underline cursor-pointer">Term and Conditions</span>
-                    </p>
-                  </div>
-
-                  <button className="w-full mt-4 text-[13px] bg-[#1a1a1a] text-white py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors">
-                    Submit
-                  </button>
-                </div>
-
-                {/* Decorative Pillars Bottom Section */}
-                <div className="bg-[#f8f9fa] p-4 relative overflow-hidden">
-                  <div className="flex justify-between opacity-10 ">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="h-12 w-8 border-x-2 border-t-2 border-black rounded-t-sm"></div>
-                    ))}
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-gray-100">
-                    <h5 className="text-[12px] font-semibold text-gray-900">Get the latest newsletter</h5>
-                    <p className="text-[10px] text-gray-500 mt-1">Echo become a tech-driven legal solutions</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Footer Bar */}
-          <div className="mt-12 pt-6 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center text-[12px] text-gray-400 gap-4">
-            <div className="order-2 md:order-1">Brisbane, AU 09:45</div>
-            <div className="flex space-x-6 order-1 md:order-2">
-              <span className="hover:text-black cursor-pointer underline">Terms & Conditions</span>
-              <span className="hover:text-black cursor-pointer underline">Privacy Policy</span>
-            </div>
-            <div className="order-3">©2026; All Rights Reserved - Echo.co</div>
-          </div>
-        </div>
-      </footer>
+     
     </div>
   );
 };

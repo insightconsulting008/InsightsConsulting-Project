@@ -873,7 +873,7 @@ From documentation to filing, Insight Consultancy made compliance feel surprisin
         </div>
       </section>
 
-      <section className="py-16 ">
+      <section className=" y-10 lg:py-16 ">
         <div className="lg:px-12 px-4 container  mx-auto text-center">
           {/* Icon */}
           <div className="flex justify-center mb-4">

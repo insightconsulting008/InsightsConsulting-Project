@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
-import { ChevronDown, Phone, FileText, ChevronRight } from "lucide-react";
+import { ChevronDown, Phone, FileText, ChevronRight, Menu, X, ChevronUp } from "lucide-react";
 
 export default function Nav() {
   const navigate = useNavigate();
   const location = useLocation();
   const menuRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   const [openServices, setOpenServices] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState(null);
 
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
@@ -45,12 +48,17 @@ export default function Nav() {
 
   /* ================= FETCH SUBCATEGORIES ================= */
   const fetchSubcategories = async (catId) => {
-    if (activeCat === catId) return;
+    if (activeCat === catId) {
+      // If clicking the same category, just toggle expansion
+      setExpandedCategory(expandedCategory === catId ? null : catId);
+      return;
+    }
 
     setActiveCat(catId);
     setActiveSub(null);
     setServices([]);
     setLoadingSub(true);
+    setExpandedCategory(catId);
 
     try {
       const res = await axios.get(
@@ -96,6 +104,10 @@ export default function Nav() {
     });
 
     setOpenServices(false);
+    setMobileMenuOpen(false);
+    setExpandedCategory(null);
+    setActiveCat(null);
+    setActiveSub(null);
   };
 
   /* ================= OUTSIDE CLICK ================= */
@@ -109,10 +121,22 @@ export default function Nav() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [mobileMenuOpen]);
+
   return (
     <header className="w-full shadow-sm sticky top-0 z-40">
       {/* TOP BAR */}
-      <div className="bg-black text-white text-sm py-2 px-4 flex items-center justify-center gap-2 text-center">
+      <div className="bg-black text-white text-sm py-2 px-4 flex items-center justify-center gap-2 text-center flex-wrap">
         <span>
           Looking For The Right{" "}
           <span className="text-yellow font-medium">
@@ -121,7 +145,7 @@ export default function Nav() {
           | Get A Quick Guidance From Our Team →
         </span>
 
-        <button className="ml-3 bg-red text-white px-3 py-1 rounded-md text-sm">
+        <button className="ml-3 bg-red text-white px-3 py-1 rounded-md text-sm whitespace-nowrap">
           Enquire Now
         </button>
       </div>
@@ -132,12 +156,12 @@ export default function Nav() {
         <Link to="/home" className="flex items-center gap-2">
           <img
             src="https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/image%2033%201%20(1)%201.png"
-            className="h-14"
-            alt=""
+            className="h-10 md:h-14"
+            alt="Insights Consultancy"
           />
         </Link>
 
-        {/* NAV LINKS */}
+        {/* DESKTOP NAV LINKS */}
         <nav className="hidden lg:flex items-center gap-8 text-gray-700 font-medium">
           <NavLink to="/" className={({ isActive }) => `${navLinkClass} ${isActive ? activeClass : ""}`}>
             Home
@@ -277,8 +301,173 @@ export default function Nav() {
               Login →
             </button>
           </Link>
+
+          {/* Mobile Menu Button */}
+          <button 
+            className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Menu size={24} />
+          </button>
         </div>
       </div>
+
+      {/* MOBILE SIDE NAV */}
+      {mobileMenuOpen && (
+        <>
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Side Navigation */}
+          <div 
+            ref={mobileMenuRef}
+            className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 lg:hidden transform transition-transform duration-300 ease-in-out"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="font-semibold text-lg">Menu</h2>
+              <button 
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Menu Content */}
+            <div className="overflow-y-auto h-[calc(100vh-140px)]">
+              <div className="p-4 space-y-2">
+                {/* Home Link */}
+                <NavLink 
+                  to="/" 
+                  className={({ isActive }) => 
+                    `block p-3 rounded-lg hover:bg-gray-50 transition-colors ${isActive ? 'bg-red-50 text-red-500' : ''}`
+                  }
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Home
+                </NavLink>
+
+                {/* Services Section with Categories */}
+                <div className="border rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 p-3 font-medium">
+                    Service We Provide
+                  </div>
+                  
+                  {/* Categories List */}
+                  <div className="divide-y">
+                    {loadingCat ? (
+                      <div className="p-4 text-center text-gray-400">Loading categories...</div>
+                    ) : (
+                      categories.map((cat) => (
+                        <div key={cat.categoryId} className="border-b last:border-b-0">
+                          {/* Category Button */}
+                          <button
+                            onClick={() => fetchSubcategories(cat.categoryId)}
+                            className="flex items-center justify-between w-full p-3 hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <FileText size={18} className="text-gray-500" />
+                              <span className="font-medium">{cat.categoryName}</span>
+                            </div>
+                            {expandedCategory === cat.categoryId ? (
+                              <ChevronUp size={16} className="text-gray-400" />
+                            ) : (
+                              <ChevronDown size={16} className="text-gray-400" />
+                            )}
+                          </button>
+
+                          {/* Subcategories (shown when category is expanded) */}
+                          {expandedCategory === cat.categoryId && (
+                            <div className="bg-gray-50 pl-11 pr-3 py-2 space-y-1">
+                              {loadingSub && activeCat === cat.categoryId ? (
+                                <div className="py-2 text-sm text-gray-400">Loading subcategories...</div>
+                              ) : subcategories.length > 0 ? (
+                                subcategories.map((sub) => (
+                                  <button
+                                    key={sub.subCategoryId}
+                                    onClick={() => handleSelectSub(sub)}
+                                    className="w-full text-left p-2 text-sm hover:text-red-500 hover:bg-white rounded transition-colors"
+                                  >
+                                    {sub.subCategoryName}
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="py-2 text-sm text-gray-400">No subcategories available</div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Other Navigation Links */}
+                <NavLink 
+                  to="/servicehub" 
+                  className={({ isActive }) => 
+                    `block p-3 rounded-lg hover:bg-gray-50 transition-colors ${isActive ? 'bg-red-50 text-red-500' : ''}`
+                  }
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Service Hub
+                </NavLink>
+
+                <NavLink 
+                  to="/resource" 
+                  className={({ isActive }) => 
+                    `block p-3 rounded-lg hover:bg-gray-50 transition-colors ${isActive ? 'bg-red-50 text-red-500' : ''}`
+                  }
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Resources
+                </NavLink>
+
+                <NavLink 
+                  to="/company" 
+                  className={({ isActive }) => 
+                    `block p-3 rounded-lg hover:bg-gray-50 transition-colors ${isActive ? 'bg-red-50 text-red-500' : ''}`
+                  }
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Company
+                </NavLink>
+
+                <NavLink 
+                  to="/contact" 
+                  className={({ isActive }) => 
+                    `block p-3 rounded-lg hover:bg-gray-50 transition-colors ${isActive ? 'bg-red-50 text-red-500' : ''}`
+                  }
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Contact
+                </NavLink>
+
+                {/* Mobile Contact Info */}
+                <div className="pt-4 mt-4 border-t">
+                  <div className="flex items-center gap-2 p-3 text-gray-700">
+                    <Phone size={18} />
+                    <span className="font-medium">+91 98578474975</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Login Button for Mobile */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-white">
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                <button className="w-full bg-red text-white px-5 py-3 rounded-lg font-medium">
+                  Login →
+                </button>
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
     </header>
   );
 }

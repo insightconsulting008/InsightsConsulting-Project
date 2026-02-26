@@ -268,7 +268,7 @@ const values = [
     </div>
 
     {/* RIGHT IMAGE */}
-    <div className="lg:pr-12">
+    <div className=" p-8 md:p-0 lg:pr-12">
       <div className="flex-1 w-full max-w-[520px] relative ">
       <div className="">
         <img
@@ -278,7 +278,7 @@ const values = [
         />
 
         {/* decorative shape */}
-        <img src='https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/Abstract%20Design%20(4).png?updatedAt=1771772119170' className="absolute -top-10 -right-20 w-20" alt="" />
+        <img src='https://ik.imagekit.io/vqdzxla6k/insights%20consultancy%20/landingPage/Abstract%20Design%20(4).png?updatedAt=1771772119170' className="absolute md:-top-10 -top-6 md:-right-20 -right-5 w-10 md:w-20" alt="" />
       </div>
     </div>
     </div>
